@@ -1,0 +1,53 @@
+# secrets
+.env
+*.env
+
+# virtual environment
+.venv/
+venv/
+
+# python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# local state / database
+state/app.db
+state/*.db
+state/*.sqlite
+state/*.sqlite3
+
+# generated outputs
+output/
+temp_media/
+temp_render/
+logs/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# optional large/local assets
+music/**/*.mp3
+# local backups
+backup_before_*/
+backup_*.zip
+*.bak
+
+# local logs
+run_log.txt
+render_log.txt
+*.log
+
+# local scratch/test outputs
+quote_test.txt
+
+# generated folders, double-check
+output/
+temp_media/
+temp_render/
+logs/
+state/

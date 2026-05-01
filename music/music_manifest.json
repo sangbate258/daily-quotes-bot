@@ -1,0 +1,480 @@
+{
+  "schema_version": "music_manifest_v2",
+  "notes": "V3 hard-guard manifest. Child/chill tracks are not allowed for wisdom/reflective/deep emotional quotes. This is still adjustable after manual listening.",
+  "tracks": [
+    {
+      "file": "music/chill/child-01.mp3",
+      "mood_tags": [
+        "chill",
+        "neutral"
+      ],
+      "energy": "medium",
+      "tempo_feel": "medium",
+      "good_for": [
+        "neutral_quote",
+        "casual"
+      ],
+      "avoid_for": [
+        "wisdom",
+        "reflective",
+        "deep_reflective",
+        "emotional",
+        "sad",
+        "healing",
+        "heavy_emotion"
+      ],
+      "weight": 0.35
+    },
+    {
+      "file": "music/chill/child-02.mp3",
+      "mood_tags": [
+        "chill",
+        "neutral"
+      ],
+      "energy": "medium",
+      "tempo_feel": "medium",
+      "good_for": [
+        "neutral_quote",
+        "casual"
+      ],
+      "avoid_for": [
+        "wisdom",
+        "reflective",
+        "deep_reflective",
+        "emotional",
+        "sad",
+        "healing",
+        "heavy_emotion"
+      ],
+      "weight": 0.25
+    },
+    {
+      "file": "music/healing/healing_01.mp3",
+      "mood_tags": [
+        "healing",
+        "gentle",
+        "warm",
+        "emotional"
+      ],
+      "energy": "low",
+      "tempo_feel": "slow",
+      "good_for": [
+        "healing",
+        "reflective",
+        "warm",
+        "emotional",
+        "wisdom"
+      ],
+      "avoid_for": [
+        "joyful",
+        "dance",
+        "upbeat",
+        "light-humor",
+        "playful"
+      ],
+      "weight": 1.0
+    },
+    {
+      "file": "music/healing/healing_02.mp3",
+      "mood_tags": [
+        "healing",
+        "gentle",
+        "warm",
+        "reflective",
+        "emotional"
+      ],
+      "energy": "low",
+      "tempo_feel": "slow",
+      "good_for": [
+        "healing",
+        "reflective",
+        "warm",
+        "emotional",
+        "wisdom",
+        "deep_reflective"
+      ],
+      "avoid_for": [
+        "joyful",
+        "dance",
+        "upbeat",
+        "light-humor",
+        "playful"
+      ],
+      "weight": 1.25
+    },
+    {
+      "file": "music/healing/healing_03.mp3",
+      "mood_tags": [
+        "healing",
+        "gentle",
+        "warm"
+      ],
+      "energy": "low",
+      "tempo_feel": "slow",
+      "good_for": [
+        "healing",
+        "reflective",
+        "warm",
+        "emotional"
+      ],
+      "avoid_for": [
+        "joyful",
+        "dance",
+        "upbeat",
+        "light-humor",
+        "playful"
+      ],
+      "weight": 1.0
+    },
+    {
+      "file": "music/light-humor/light_humor_01.mp3",
+      "mood_tags": [
+        "light-humor",
+        "funny-light",
+        "playful",
+        "cute"
+      ],
+      "energy": "medium",
+      "tempo_feel": "medium",
+      "good_for": [
+        "light-humor",
+        "funny-light",
+        "playful",
+        "cute",
+        "meme",
+        "joyful"
+      ],
+      "avoid_for": [
+        "wisdom",
+        "reflective",
+        "deep_reflective",
+        "sad",
+        "grief",
+        "heavy_emotion",
+        "emotional"
+      ],
+      "weight": 1.0
+    },
+    {
+      "file": "music/light-humor/light_humor_02.mp3",
+      "mood_tags": [
+        "light-humor",
+        "funny-light",
+        "playful",
+        "cute"
+      ],
+      "energy": "medium",
+      "tempo_feel": "medium",
+      "good_for": [
+        "light-humor",
+        "funny-light",
+        "playful",
+        "cute",
+        "meme",
+        "joyful"
+      ],
+      "avoid_for": [
+        "wisdom",
+        "reflective",
+        "deep_reflective",
+        "sad",
+        "grief",
+        "heavy_emotion",
+        "emotional"
+      ],
+      "weight": 1.0
+    },
+    {
+      "file": "music/love/love_01.mp3",
+      "mood_tags": [
+        "love",
+        "warm",
+        "gentle",
+        "emotional"
+      ],
+      "energy": "low",
+      "tempo_feel": "slow",
+      "good_for": [
+        "love",
+        "warm",
+        "healing",
+        "reflective",
+        "emotional"
+      ],
+      "avoid_for": [
+        "joyful",
+        "dance",
+        "upbeat",
+        "light-humor",
+        "playful"
+      ],
+      "weight": 1.0
+    },
+    {
+      "file": "music/love/love_02.mp3",
+      "mood_tags": [
+        "love",
+        "warm",
+        "gentle",
+        "reflective"
+      ],
+      "energy": "low",
+      "tempo_feel": "slow",
+      "good_for": [
+        "love",
+        "warm",
+        "healing",
+        "reflective",
+        "emotional",
+        "wisdom"
+      ],
+      "avoid_for": [
+        "joyful",
+        "dance",
+        "upbeat",
+        "light-humor",
+        "playful"
+      ],
+      "weight": 1.15
+    },
+    {
+      "file": "music/motivation/motivation_01.mp3",
+      "mood_tags": [
+        "motivation",
+        "upbeat",
+        "hopeful"
+      ],
+      "energy": "high",
+      "tempo_feel": "medium_fast",
+      "good_for": [
+        "motivation",
+        "discipline",
+        "action",
+        "hopeful",
+        "upbeat",
+        "joyful"
+      ],
+      "avoid_for": [
+        "wisdom",
+        "reflective",
+        "deep_reflective",
+        "sad",
+        "grief",
+        "heavy_emotion",
+        "gentle",
+        "emotional"
+      ],
+      "weight": 1.0
+    },
+    {
+      "file": "music/motivation/motivation_02.mp3",
+      "mood_tags": [
+        "motivation",
+        "upbeat",
+        "hopeful"
+      ],
+      "energy": "high",
+      "tempo_feel": "medium_fast",
+      "good_for": [
+        "motivation",
+        "discipline",
+        "action",
+        "hopeful",
+        "upbeat",
+        "joyful"
+      ],
+      "avoid_for": [
+        "wisdom",
+        "reflective",
+        "deep_reflective",
+        "sad",
+        "grief",
+        "heavy_emotion",
+        "gentle",
+        "emotional"
+      ],
+      "weight": 1.0
+    },
+    {
+      "file": "music/motivation/motivation_03.mp3",
+      "mood_tags": [
+        "motivation",
+        "upbeat",
+        "hopeful"
+      ],
+      "energy": "high",
+      "tempo_feel": "medium_fast",
+      "good_for": [
+        "motivation",
+        "discipline",
+        "action",
+        "hopeful",
+        "upbeat",
+        "joyful"
+      ],
+      "avoid_for": [
+        "wisdom",
+        "reflective",
+        "deep_reflective",
+        "sad",
+        "grief",
+        "heavy_emotion",
+        "gentle",
+        "emotional"
+      ],
+      "weight": 1.0
+    },
+    {
+      "file": "music/sad/sad_01.mp3",
+      "mood_tags": [
+        "sad",
+        "emotional",
+        "gentle"
+      ],
+      "energy": "low",
+      "tempo_feel": "slow",
+      "good_for": [
+        "sad",
+        "emotional",
+        "loneliness",
+        "healing",
+        "reflective"
+      ],
+      "avoid_for": [
+        "joyful",
+        "dance",
+        "upbeat",
+        "light-humor",
+        "playful"
+      ],
+      "weight": 1.0
+    },
+    {
+      "file": "music/sad/sad_02.mp3",
+      "mood_tags": [
+        "sad",
+        "emotional",
+        "gentle"
+      ],
+      "energy": "low",
+      "tempo_feel": "slow",
+      "good_for": [
+        "sad",
+        "emotional",
+        "loneliness",
+        "healing",
+        "reflective"
+      ],
+      "avoid_for": [
+        "joyful",
+        "dance",
+        "upbeat",
+        "light-humor",
+        "playful"
+      ],
+      "weight": 1.0
+    },
+    {
+      "file": "music/sad/sad_03.mp3",
+      "mood_tags": [
+        "sad",
+        "emotional",
+        "gentle"
+      ],
+      "energy": "low",
+      "tempo_feel": "slow",
+      "good_for": [
+        "sad",
+        "emotional",
+        "loneliness",
+        "healing",
+        "reflective"
+      ],
+      "avoid_for": [
+        "joyful",
+        "dance",
+        "upbeat",
+        "light-humor",
+        "playful"
+      ],
+      "weight": 1.0
+    },
+    {
+      "file": "music/wisdom/wisdom_01.mp3",
+      "mood_tags": [
+        "wisdom",
+        "reflective",
+        "gentle"
+      ],
+      "energy": "low",
+      "tempo_feel": "slow",
+      "good_for": [
+        "wisdom",
+        "reflective",
+        "deep_reflective",
+        "life-lessons",
+        "emotional"
+      ],
+      "avoid_for": [
+        "joyful",
+        "dance",
+        "upbeat",
+        "light-humor",
+        "playful"
+      ],
+      "weight": 1.2
+    },
+    {
+      "file": "music/wisdom/wisdom_02.mp3",
+      "mood_tags": [
+        "wisdom",
+        "reflective",
+        "gentle"
+      ],
+      "energy": "low",
+      "tempo_feel": "slow",
+      "good_for": [
+        "wisdom",
+        "reflective",
+        "deep_reflective",
+        "life-lessons",
+        "emotional"
+      ],
+      "avoid_for": [
+        "joyful",
+        "dance",
+        "upbeat",
+        "light-humor",
+        "playful"
+      ],
+      "weight": 1.2
+    },
+    {
+      "file": "music/wisdom/wisdom_03.mp3",
+      "mood_tags": [
+        "wisdom",
+        "reflective",
+        "gentle",
+        "warm"
+      ],
+      "energy": "low",
+      "tempo_feel": "slow",
+      "good_for": [
+        "wisdom",
+        "reflective",
+        "deep_reflective",
+        "life-lessons",
+        "emotional",
+        "warm"
+      ],
+      "avoid_for": [
+        "joyful",
+        "dance",
+        "upbeat",
+        "light-humor",
+        "playful"
+      ],
+      "weight": 1.3
+    }
+  ]
+}
