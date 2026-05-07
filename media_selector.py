@@ -12,7 +12,7 @@ from google import genai
 from google.genai import types
 
 from db import get_connection
-from giphy_client import search_giphy
+from giphy_client import search_giphy, GiphyRateLimitError
 from pexels_client import search_pexels_videos
 from media_previewer import ensure_preview_sheet
 
@@ -522,7 +522,31 @@ def get_policy(media_input: dict[str, Any]) -> dict[str, Any]:
         "scene_retry_query_rounds": int(policy.get("scene_retry_query_rounds", env_int("SCENE_RETRY_QUERY_ROUNDS", 4))),
         "allow_unvisioned_candidates": bool(
             policy.get("allow_unvisioned_candidates", env_int("ALLOW_UNVISIONED_CANDIDATES", 0) == 1)
-),
+        ),
+            "allow_relaxed_vision_candidates": bool(
+            policy.get("allow_relaxed_vision_candidates", env_int("ALLOW_RELAXED_VISION_CANDIDATES", 1) == 1)
+        ),
+        "relaxed_min_vision_score": float(
+            policy.get("relaxed_min_vision_score", env_float("RELAXED_MIN_VISION_SCORE", 70))
+        ),
+        "relaxed_min_final_score": float(
+            policy.get("relaxed_min_final_score", env_float("RELAXED_MIN_FINAL_SCORE", 50))
+        ),
+        "relaxed_min_role_score": float(
+            policy.get("relaxed_min_role_score", env_float("RELAXED_MIN_ROLE_SCORE", 4))
+        ),
+                "relaxed_min_role_score": float(
+            policy.get("relaxed_min_role_score", env_float("RELAXED_MIN_ROLE_SCORE", 4))
+        ),
+        "allow_scene_drop_fallback": bool(
+            policy.get("allow_scene_drop_fallback", env_int("ALLOW_SCENE_DROP_FALLBACK", 1) == 1)
+        ),
+        "min_scenes_after_drop": int(
+            policy.get("min_scenes_after_drop", env_int("MIN_SCENES_AFTER_DROP", 2))
+        ),
+        "max_dropped_scenes": int(
+            policy.get("max_dropped_scenes", env_int("MAX_DROPPED_SCENES", 1))
+        ),
     }
 
 def infer_retry_family(scene_request: dict[str, Any]) -> str:
@@ -547,13 +571,70 @@ def infer_retry_family(scene_request: dict[str, Any]) -> str:
         " ".join(map(str, safe_list(scene_request.get("queries_fallback")))),
     ]
     text = normalize_text(" ".join(parts))
-
-    # Specific visual content families first. These must outrank generic thinking/reflection.
+    # High-priority concrete action/emotion families.
+    # Put these before love/books/teaching so retry does not drift.
     if any(k in text for k in [
-        "love", "romance", "romantic", "heart", "heart eyes", "attachment",
-        "clingy", "mesmerized", "admire", "adore", "obsessed", "crush",
-        "affection", "floating hearts", "yêu", "trái tim", "say mê", "mê mẩn",
+        "planning", "plan", "writing list", "to do list", "todo list",
+        "checklist", "schedule", "calendar", "typing fast", "write down",
+        "taking notes", "note taking", "ghi chú", "lên kế hoạch",
+        "danh sách", "lịch trình", "kế hoạch",
     ]):
+        return "planning_writing"
+
+    if any(k in text for k in [
+        "sad", "gloomy", "sigh", "sighing", "cry", "crying", "tears",
+        "lonely", "melancholy", "heart broken", "heartbroken", "upset",
+        "feeling down", "buồn", "u sầu", "thở dài", "khóc", "cô đơn",
+        "tan vỡ", "đau lòng",
+    ]):
+        return "sad_gloomy"
+
+    if any(k in text for k in [
+        "happy dance", "happy jump", "joyful", "joy", "celebrate",
+        "celebration", "proud", "excited", "cheer", "cheering",
+        "smiling happily", "vui", "vui vẻ", "nhảy vui", "ăn mừng",
+        "tự hào", "hân hoan",
+    ]):
+        return "joy_celebration"
+
+    if any(k in text for k in [
+        "dizzy", "spinning", "spin", "overwhelmed", "stressed",
+        "chaos", "chaotic", "everything is fine", "fire meme",
+        "panic", "panicking", "quay cuồng", "choáng", "bối rối",
+        "hoảng", "rối tung",
+    ]):
+        return "dizzy_chaos"
+
+    if any(k in text for k in [
+        "silence", "silent", "shh", "regret", "regret speaking",
+        "facepalm", "awkward", "awkward smile", "said too much",
+        "lỡ lời", "im lặng", "hối hận", "ngượng", "quê", "nói lỡ",
+    ]):
+        return "silence_regret"
+
+    
+    if any(k in text for k in [
+        "relieved", "relief", "deep breath", "breathing", "breathe",
+        "letting go", "let go", "calm down", "lightness", "peaceful smiling",
+        "nhẹ nhõm", "thở ra", "buông bỏ", "bình tâm", "dịu lại",
+    ]):
+        return "relief_breath"
+
+    if any(k in text for k in [
+        "heart/feeling", "heart feeling", "feeling", "feelings",
+        "emotion", "emotional warmth", "warm heart", "heartwarming",
+        "heart beat", "heartbeat", "heart sparkle", "soft heart",
+        "trái tim", "cảm xúc", "ấm lòng", "rung động", "dịu dàng",
+    ]):
+        return "heart_feeling"
+    
+    # Specific visual content families first. These must outrank generic thinking/reflection.
+    love_terms = [
+        "love", "romance", "romantic", "heart eyes", "attachment",
+        "clingy", "mesmerized", "admire", "adore", "obsessed", "crush",
+        "affection", "floating hearts", "say mê", "mê mẩn",
+    ]
+    if any(k in text for k in love_terms) or re.search(r"\bhearts?\b", text):
         return "love_attachment"
 
     if any(k in text for k in [
@@ -568,7 +649,11 @@ def infer_retry_family(scene_request: dict[str, Any]) -> str:
         "comfort", "support", "bạn", "tình bạn", "đồng hành", "ôm", "an ủi",
     ]):
         return "friendship_connection"
-
+    if any(k in text for k in [
+            "fail", "failure", "fall", "falling", "trip", "tripping", "clumsy",
+            "mistake", "oops", "slip", "crash", "funny fail", "vấp", "té", "ngã",
+        ]):
+            return "funny_failure"
     if any(k in text for k in [
         "worse", "bad luck", "negative escalation", "things going wrong",
         "problem gets worse", "chain reaction", "pile up", "disaster",
@@ -590,7 +675,13 @@ def infer_retry_family(scene_request: dict[str, Any]) -> str:
         "thoát", "giải phóng",
     ]):
         return "freedom_release"
-
+    if any(k in text for k in [
+            "work", "working", "working hard", "effort", "try", "trying",
+            "determined", "typing", "building", "drawing", "painting",
+            "creating", "making", "bee working", "chăm chỉ", "nỗ lực",
+            "cố gắng", "làm việc", "xây", "vẽ",
+        ]):
+            return "effort_working"
     if any(k in text for k in [
         "teach", "teaching", "explain", "explaining", "lesson", "warning",
         "tell", "telling", "advice", "listen", "guidance", "instruction",
@@ -611,7 +702,22 @@ def infer_retry_family(scene_request: dict[str, Any]) -> str:
         "baffled", "what just happened", "tử tế", "ấm áp", "dịu dàng",
     ]):
         return "kindness_vs_confusion"
+    
 
+    
+
+    if any(k in text for k in [
+        "shrug", "peaceful", "relax", "relaxed", "acceptance", "accept",
+        "okay", "calm", "chill", "smile", "lightly", "gentle",
+        "bình yên", "thư giãn", "chấp nhận", "nhún vai",
+    ]):
+        return "peaceful_acceptance"
+
+    if any(k in text for k in [
+        "search", "searching", "looking for", "find", "finding",
+        "magnifying", "explore", "curious", "tìm kiếm", "tìm",
+    ]):
+        return "searching"
     if any(k in text for k in [
         "think", "thinking", "reflection", "reflect", "realization",
         "ponder", "pondering", "confused", "confusion", "wonder",
@@ -631,6 +737,94 @@ def build_semantic_retry_queries(scene_request: dict[str, Any], family: str) -> 
             "cute character teaching lesson",
             "cartoon talking and pointing",
             "listener reaction cartoon",
+        ],
+                "heart_feeling": [
+            "cute heart sparkle",
+            "heartwarming cute sticker",
+            "cartoon heart feeling",
+            "cute animal soft heart",
+            "warm heart cartoon",
+            "cute heart hug",
+        ],
+                "funny_failure": [
+            "cute animal fail",
+            "clumsy cartoon fall",
+            "funny penguin trip",
+            "cartoon slip fall",
+            "cute character oops",
+            "funny cartoon mistake",
+        ],
+                "planning_writing": [
+            "cartoon writing list",
+            "funny cartoon planning",
+            "cute animal typing fast",
+            "checklist cartoon",
+            "cartoon taking notes",
+            "cute character writing",
+        ],
+        "sad_gloomy": [
+            "sad cute animal",
+            "sad cartoon sigh",
+            "gloomy cute sticker",
+            "crying cute animal",
+            "cute cat sad",
+            "heartbroken cartoon sticker",
+        ],
+        "joy_celebration": [
+            "cute animal happy dance",
+            "happy cartoon jump",
+            "sticker joyful",
+            "cute character celebrating",
+            "happy animal celebrate",
+            "proud cartoon dance",
+        ],
+        "dizzy_chaos": [
+            "confused cartoon spinning",
+            "cartoon dizzy",
+            "stressed cat meme",
+            "overwhelmed cartoon",
+            "everything is fine cute",
+            "panic cartoon sticker",
+        ],
+        "silence_regret": [
+            "cartoon character shh",
+            "funny facepalm cartoon",
+            "awkward smile meme",
+            "cat regret speaking",
+            "cute animal silent",
+            "oops regret cartoon",
+        ],
+        "relief_breath": [
+            "relieved cute animal",
+            "cartoon deep breath",
+            "letting go sticker",
+            "peaceful smiling sticker",
+            "calm cute animal",
+            "relaxed cartoon sigh",
+        ],
+        "effort_working": [
+            "funny cartoon working hard",
+            "cute animal typing",
+            "bee working sticker",
+            "cartoon building something",
+            "cute animal painting",
+            "determined cute character",
+        ],
+        "peaceful_acceptance": [
+            "cute animal shrug",
+            "peaceful cartoon smile",
+            "relaxed cute sticker",
+            "calm cartoon reaction",
+            "cute character okay",
+            "chill animal cartoon",
+        ],
+        "searching": [
+            "confused cartoon searching",
+            "cute cat magnifying glass",
+            "cartoon looking for something",
+            "curious animal searching",
+            "cute character searching",
+            "searching cartoon sticker",
         ],
         "thinking_reflection": [
             "cartoon thinking hard",
@@ -829,6 +1023,8 @@ def collect_candidates_for_scene(
 
         try:
             results = search_fn(query, limit=limit)
+        except GiphyRateLimitError:
+            raise
         except Exception as e:
             print(f"[WARN] {source} search failed: {query} -> {e}")
             continue
@@ -1528,11 +1724,25 @@ def candidate_is_eligible(item: dict[str, Any], policy: dict[str, Any]) -> tuple
         if decision == "reject":
             return False, "vision_reject"
 
+        if role_score < min_role:
+            return False, f"scene_role_match_too_low:{role_score}"
+
         if vision_score is not None and float(vision_score) < min_vision:
             return False, f"vision_score_too_low:{vision_score}"
 
-        if role_score < min_role:
-            return False, f"scene_role_match_too_low:{role_score}"
+        if bool(policy.get("allow_relaxed_vision_candidates", True)):
+            relaxed_min_vision = float(policy.get("relaxed_min_vision_score", 70))
+            relaxed_min_final = float(policy.get("relaxed_min_final_score", 50))
+            relaxed_min_role = float(policy.get("relaxed_min_role_score", 4))
+
+            if (
+                decision in {"strong_fit", "usable", "weak_fit"}
+                and vision_score is not None
+                and float(vision_score) >= relaxed_min_vision
+                and final_score >= relaxed_min_final
+                and role_score >= relaxed_min_role
+            ):
+                return True, f"eligible_relaxed_vision:{decision}"
 
     if final_score < min_final:
         return False, f"final_score_too_low:{round(final_score, 2)}"
@@ -1666,7 +1876,7 @@ def build_scene_retry_queries(scene_request: dict[str, Any]) -> list[str]:
 
     # Content-specific boosters stay in the same family and should be placed near the front.
     boosters: list[str] = []
-    if family == "books_reading" or any(k in text for k in ["book", "books", "library", "reading", "sách", "đọc sách"]):
+    if family == "books_reading":
         boosters += [
             "cozy library cartoon",
             "cute animal reading books",
@@ -1675,8 +1885,7 @@ def build_scene_retry_queries(scene_request: dict[str, Any]) -> list[str]:
             "cute cat reading book",
             "bookshelf cartoon cozy",
         ]
-
-    if family == "love_attachment" or any(k in text for k in ["heart", "hearts", "love", "affection", "romantic", "trái tim", "yêu"]):
+    if family == "love_attachment":
         boosters += [
             "cute animal heart eyes",
             "cartoon in love reaction",
@@ -2240,28 +2449,59 @@ def select_media_bundle(media_selector_input: dict[str, Any]) -> dict[str, Any]:
         # helps prevent repeated candidates when only one candidate exists.
         
 
-    failed_scene_ids = [
+        failed_scene_ids = [
         scene_requests[i].get("scene_id", i + 1)
         for i, shortlist in enumerate(scene_shortlists)
         if not shortlist
     ]
 
+    dropped_scene_ids: list[Any] = []
+    used_scene_drop_fallback = False
+
     if failed_scene_ids:
-        return {
-            "schema_version": "media_selector_output_v1",
-            "video_selection_summary": {
-                "selection_status": "failed",
-                "failure_reason": f"no_eligible_candidate_for_scene_{failed_scene_ids[0]}",
-                "failed_scene_ids": failed_scene_ids,
-                "motif_main": video_context.get("motif_main", ""),
-                "visual_world": video_context.get("visual_world", ""),
-                "consistency_score": 0,
-                "used_fallback_source": used_fallback_source,
-                "notes": "vision_reject_candidates_not_rendered_scene_retry_used",
-            },
-            "selected_scenes": [],
-            "rejected_candidates_log": rejected_candidates_log,
-        }
+        available_pairs = [
+            (scene_requests[i], shortlist)
+            for i, shortlist in enumerate(scene_shortlists)
+            if shortlist
+        ]
+
+        can_drop_failed_scenes = (
+            bool(policy.get("allow_scene_drop_fallback", True))
+            and len(failed_scene_ids) <= int(policy.get("max_dropped_scenes", 1))
+            and len(available_pairs) >= int(policy.get("min_scenes_after_drop", 2))
+            and len(scene_requests) >= 3
+        )
+
+        if can_drop_failed_scenes:
+            dropped_scene_ids = list(failed_scene_ids)
+            used_scene_drop_fallback = True
+
+            print(
+                "[SCENE DROP]",
+                f"dropped_scene_ids={dropped_scene_ids}",
+                f"remaining_scenes={len(available_pairs)}",
+                f"motif={video_context.get('motif_main', '')}",
+            )
+
+            scene_requests = [scene for scene, _ in available_pairs]
+            scene_shortlists = [shortlist for _, shortlist in available_pairs]
+        else:
+            return {
+                "schema_version": "media_selector_output_v1",
+                "video_selection_summary": {
+                    "selection_status": "failed",
+                    "failure_reason": f"no_eligible_candidate_for_scene_{failed_scene_ids[0]}",
+                    "failed_scene_ids": failed_scene_ids,
+                    "motif_main": video_context.get("motif_main", ""),
+                    "visual_world": video_context.get("visual_world", ""),
+                    "consistency_score": 0,
+                    "used_fallback_source": used_fallback_source,
+                    "used_scene_drop_fallback": False,
+                    "notes": "vision_reject_candidates_not_rendered_scene_retry_used",
+                },
+                "selected_scenes": [],
+                "rejected_candidates_log": rejected_candidates_log,
+            }
 
     selected_bundle, bundle_score = select_best_scene_bundle(scene_shortlists, video_context)
 
@@ -2327,6 +2567,8 @@ def select_media_bundle(media_selector_input: dict[str, Any]) -> dict[str, Any]:
                 "visual_world": video_context.get("visual_world", ""),
                 "consistency_score": bundle_score,
                 "used_fallback_source": used_fallback_source,
+                "used_scene_drop_fallback": used_scene_drop_fallback,
+                "dropped_scene_ids": dropped_scene_ids,
                 "notes": "scene_candidates_passed_but_story_arc_failed",
             },
             "selected_scenes": [],
@@ -2385,6 +2627,8 @@ def select_media_bundle(media_selector_input: dict[str, Any]) -> dict[str, Any]:
             "visual_world": video_context.get("visual_world", ""),
             "consistency_score": bundle_score,
             "used_fallback_source": used_fallback_source,
+            "used_scene_drop_fallback": used_scene_drop_fallback,
+            "dropped_scene_ids": dropped_scene_ids,
             "arc_validation": arc_validation,
             "notes": (
                 "metadata_plus_gemma_vision_rerank_with_hard_gate_and_scene_retry"

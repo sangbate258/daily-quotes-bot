@@ -138,7 +138,147 @@ def validate_ai_data(ai_data: dict[str, Any]) -> None:
     # Phase 2: nếu có schema mới, cũng giới hạn scene_plan để đồng bộ.
     if isinstance(ai_data.get("scene_plan"), list):
         ai_data["scene_plan"] = ai_data["scene_plan"][:3]
+EASY_VISUAL_TERMS = {
+    "cat", "dog", "animal", "cute", "friend", "friends", "hug", "help", "support",
+    "book", "books", "reading", "library", "thinking", "confused", "searching",
+    "magnifying", "walking", "dance", "celebrate", "success", "rocket", "work",
+    "typing", "building", "drawing", "painting", "smile", "calm", "relaxed",
+    "shrug", "heart", "love", "flower", "garden", "fall", "trip", "fail",
+    "chó", "mèo", "sách", "đọc", "bạn", "ôm", "giúp", "cười", "bình yên",
+    "nhảy", "thành công", "làm việc", "vẽ", "xây", "té", "ngã",
+}
 
+HARD_ABSTRACT_TERMS = {
+    "fake persona", "persona", "mask", "identity", "self-deception",
+    "perspective shift", "perspective", "painful clarity", "clarity",
+    "illusion", "truth", "existential", "ego", "soul", "metaphor",
+    "inside a dog's belly", "dog's belly", "belly", "mimic perspective",
+    "the mask", "the mirror",
+    "bản ngã", "danh tính", "mặt nạ", "ảo tưởng", "sự thật",
+    "góc nhìn", "ẩn dụ", "linh hồn",
+}
+
+
+def _join_ai_scene_text(ai_data: dict[str, Any]) -> str:
+    chunks: list[str] = []
+
+    for key in [
+        "vi_full",
+        "vi_short",
+        "caption",
+        "lane",
+        "mood",
+        "music_mood_tag",
+        "dynamic_hashtag",
+    ]:
+        value = ai_data.get(key)
+        if value:
+            chunks.append(str(value))
+
+    for key in ["visual_plan", "text_output"]:
+        value = ai_data.get(key)
+        if isinstance(value, dict):
+            chunks.append(" ".join(str(v) for v in value.values() if v))
+
+    scenes = ai_data.get("scene_plan") or ai_data.get("scenes") or []
+    if isinstance(scenes, list):
+        for scene in scenes:
+            if not isinstance(scene, dict):
+                continue
+            for key in [
+                "scene_role",
+                "meaning",
+                "visual_goal",
+                "semantic_goal",
+                "visual_intent",
+                "emotion_target",
+            ]:
+                value = scene.get(key)
+                if value:
+                    chunks.append(str(value))
+
+            for key in [
+                "must_have_elements",
+                "must_show",
+                "nice_to_have",
+                "avoid_elements",
+                "queries_giphy",
+                "queries_fallback",
+            ]:
+                value = scene.get(key)
+                if isinstance(value, list):
+                    chunks.append(" ".join(str(x) for x in value if x))
+
+    return " ".join(chunks).lower()
+
+
+def assess_quote_visual_complexity(ai_data: dict[str, Any]) -> dict[str, Any]:
+    text = _join_ai_scene_text(ai_data)
+
+    scenes = ai_data.get("scene_plan") or ai_data.get("scenes") or []
+    scene_count = len(scenes) if isinstance(scenes, list) else 0
+
+    hard_hits = sorted(term for term in HARD_ABSTRACT_TERMS if term in text)
+    easy_hits = sorted(term for term in EASY_VISUAL_TERMS if term in text)
+
+    scene_without_easy_visual = 0
+    if isinstance(scenes, list):
+        for scene in scenes:
+            if not isinstance(scene, dict):
+                continue
+            scene_text = " ".join(
+                str(scene.get(key, ""))
+                for key in [
+                    "meaning",
+                    "visual_goal",
+                    "semantic_goal",
+                    "visual_intent",
+                    "emotion_target",
+                ]
+            ).lower()
+            scene_text += " "
+            scene_text += " ".join(
+                str(x)
+                for key in ["must_have_elements", "must_show", "queries_giphy", "queries_fallback"]
+                for x in (scene.get(key) if isinstance(scene.get(key), list) else [])
+            ).lower()
+
+            if not any(term in scene_text for term in EASY_VISUAL_TERMS):
+                scene_without_easy_visual += 1
+
+    reasons: list[str] = []
+
+    if scene_count > 3:
+        reasons.append(f"too_many_scenes:{scene_count}")
+
+    if hard_hits:
+        reasons.append(f"hard_abstract_terms:{', '.join(hard_hits[:5])}")
+
+    if scene_without_easy_visual >= 2:
+        reasons.append(f"too_many_scenes_without_easy_visual:{scene_without_easy_visual}")
+
+    if len(easy_hits) < 2:
+        reasons.append("not_enough_easy_visual_terms")
+
+    accepted = not reasons
+
+    return {
+        "accepted": accepted,
+        "scene_count": scene_count,
+        "easy_hits": easy_hits[:12],
+        "hard_hits": hard_hits[:12],
+        "scene_without_easy_visual": scene_without_easy_visual,
+        "reasons": reasons,
+    }
+
+
+def reject_if_quote_too_complex(ai_data: dict[str, Any]) -> None:
+    result = assess_quote_visual_complexity(ai_data)
+    ai_data["quote_complexity_gate"] = result
+
+    if not result["accepted"]:
+        print("[COMPLEXITY SKIP]", result)
+        raise RuntimeError(f"Quote Complexity Gate rejected: {result}")
 
 def build_media_selector_input(ai_data: dict[str, Any]) -> dict[str, Any]:
     """
@@ -469,7 +609,7 @@ async def generate_one_video(config: AppConfig, slot_index: int, attempt_number:
                     }
                 )
                 validate_ai_data(ai_data)
-
+                reject_if_quote_too_complex(ai_data)
                 # Phase 4: build schema input và dùng bundle selector thật.
                 media_selector_input = build_media_selector_input(ai_data)
                 selected_media, media_result = select_and_download_scene_media(media_selector_input)

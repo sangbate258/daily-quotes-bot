@@ -201,6 +201,90 @@ def normalize_music_mood_tag(raw_tag: str) -> str:
     return "chill"
 
 
+def adjust_music_mood_by_context(
+    music_mood_tag: str,
+    *,
+    text_original: str,
+    vi_short: str,
+    motif_main: str,
+    scene_plan: list[dict[str, Any]] | None = None,
+) -> str:
+    """
+    Deterministic music guard.
+
+    Some quotes are emotionally soft/warm, but the model may label them as sad/healing.
+    This guard keeps friendship/reassurance videos from sounding too mournful.
+    """
+    scene_plan = scene_plan or []
+
+    chunks = [
+        safe_str(text_original).lower(),
+        safe_str(vi_short).lower(),
+        safe_str(motif_main).lower(),
+    ]
+
+    for scene in scene_plan:
+        if not isinstance(scene, dict):
+            continue
+        for key in [
+            "meaning",
+            "visual_goal",
+            "semantic_goal",
+            "visual_intent",
+            "emotion_target",
+        ]:
+            chunks.append(safe_str(scene.get(key)).lower())
+
+        for key in [
+            "must_have_elements",
+            "must_show",
+            "nice_to_have",
+            "queries_giphy",
+            "queries_fallback",
+            "continuity_tags",
+        ]:
+            value = scene.get(key)
+            if isinstance(value, list):
+                chunks.append(" ".join(safe_str(x).lower() for x in value if safe_str(x)))
+
+    text = " ".join(chunks)
+
+    warm_friendship_terms = [
+        "friend", "friends", "friendship", "pooh", "piglet",
+        "beside", "together", "hug", "comfort", "support",
+        "reassurance", "still there", "connection", "warm",
+        "gentle", "kindness", "care", "caring",
+        "bạn", "tình bạn", "bên cạnh", "đồng hành", "ôm",
+        "an tâm", "vỗ về", "ấm áp", "dịu dàng", "kết nối",
+    ]
+
+    if any(term in text for term in warm_friendship_terms):
+        if music_mood_tag in {"sad", "emotional", "healing", "reflective", "chill"}:
+            return "warm"
+
+    learning_growth_terms = [
+        "book", "books", "reading", "read", "study", "studying",
+        "mind", "brain", "growth", "sharpening", "sharpen", "whetstone",
+        "sword", "edge", "lightbulb", "eureka", "smart", "learning",
+        "knowledge", "curious", "idea", "realization",
+        "sách", "đọc sách", "đọc", "học", "học hỏi", "tâm trí",
+        "trí óc", "kiến thức", "mài sắc", "thanh kiếm", "đá mài",
+        "ý tưởng", "lóe sáng", "khai sáng",
+    ]
+
+    sad_context_terms = [
+        "sad", "cry", "crying", "tears", "heartbreak", "lonely",
+        "grief", "loss", "melancholy",
+        "buồn", "khóc", "nước mắt", "cô đơn", "mất mát", "đau lòng",
+    ]
+
+    if any(term in text for term in learning_growth_terms):
+        if not any(term in text for term in sad_context_terms):
+            if music_mood_tag in {"sad", "emotional", "healing", "reflective", "chill", "wisdom"}:
+                return "playful"
+
+    return music_mood_tag
+
 def normalize_dynamic_hashtag(lane: str) -> str:
     return LANE_TO_HASHTAG.get(lane, "#wisdom")
 
@@ -348,7 +432,132 @@ def apply_quote_specific_scene_templates(
 
     def common_tags(*extra: str) -> list[str]:
         return [tag for tag in [motif_main, visual_world, *extra] if tag]
-
+    # Reading / novel / joy of books:
+    # Example:
+    # "A person, be it gentleman or lady, who has not pleasure in a good novel,
+    #  must be intolerably stupid."
+    #
+    # Visual logic:
+    # 1) establish the good novel / book
+    # 2) contrast with someone who does not get it: confused / loading / blank brain
+    # 3) clarify the pleasure: cute character happily reading
+    if (
+        (
+            any(k in raw for k in ["novel", "book", "books", "reading", "read"])
+            and any(k in raw for k in ["pleasure", "joy", "enjoy", "delight", "happy", "stupid", "fool"])
+        )
+        or (
+            any(k in vi for k in ["tiểu thuyết", "cuốn sách", "đọc sách", "đọc"])
+            and any(k in vi for k in ["niềm vui", "vui", "thích thú", "ngốc"])
+        )
+    ):
+        return [
+            _scene(
+                scene_id=1,
+                scene_role="setup",
+                meaning="A good novel or book appears as something inviting and interesting.",
+                semantic_goal="Establish the object of joy: a good novel or book.",
+                visual_goal="A magical or cozy book opening, or a cute book-focused visual.",
+                visual_intent="good novel, book, reading invitation, cozy reading mood",
+                visual_family="cartoon_sticker",
+                priority="literal",
+                must_have_elements=["book", "novel", "reading"],
+                must_show=["a book or novel is clearly visible"],
+                nice_to_have=["magical book", "cozy reading vibe", "book opening"],
+                emotion_target="curious, inviting, warm",
+                avoid_elements=[
+                    "blank book with no clear reading meaning",
+                    "dark horror book",
+                    "random library with no book focus",
+                    "unrelated dancing",
+                    "romance unrelated to reading",
+                ],
+                queries_giphy=[
+                    "cute cat reading book",
+                    "cartoon reading book happy",
+                    "sticker reading book",
+                    "magical book opening cartoon",
+                    "cute animal reading books",
+                    "cozy library cartoon",
+                ],
+                queries_fallback=[
+                    "cute animal reading book",
+                    "cartoon reading book",
+                    "open book cartoon",
+                ],
+                continuity_tags=common_tags("reading", "novel", "book", "setup"),
+            ),
+            _scene(
+                scene_id=2,
+                scene_role="contrast",
+                meaning="Someone who cannot enjoy the good novel looks clueless or mentally blank.",
+                semantic_goal="Show the contrast: not understanding or not appreciating the joy of reading.",
+                visual_goal="A cute confused character, loading brain, blank stare, or clueless reaction.",
+                visual_intent="confusion, blank brain, loading, not understanding",
+                visual_family="light_reaction",
+                priority="literal_or_symbolic",
+                must_have_elements=["confused", "blank brain", "loading"],
+                must_show=["clear confused or clueless reaction"],
+                nice_to_have=["loading icon", "blank stare", "funny confused cat"],
+                emotion_target="confused, clueless, funny",
+                avoid_elements=[
+                    "happy reading",
+                    "smart studying success",
+                    "angry argument",
+                    "sad heavy drama",
+                    "unrelated romance",
+                ],
+                queries_giphy=[
+                    "confused cat meme",
+                    "blank stare cartoon",
+                    "funny confused face sticker",
+                    "brain loading cartoon",
+                    "loading cat gif",
+                    "confused cartoon thinking",
+                ],
+                queries_fallback=[
+                    "confused reaction",
+                    "blank stare",
+                    "loading brain",
+                ],
+                continuity_tags=common_tags("reading", "contrast", "confused", "blank brain"),
+            ),
+            _scene(
+                scene_id=3,
+                scene_role="payoff",
+                meaning="The joy of a good novel is made clear through a character happily reading.",
+                semantic_goal="Clarify the missing beat: reading a good novel should feel joyful.",
+                visual_goal="A cute character or animal happily reading, hugging a book, or enjoying a book.",
+                visual_intent="happy reading, enjoying book, joy of novel",
+                visual_family="cute_animal",
+                priority="literal",
+                must_have_elements=["happy", "reading", "book"],
+                must_show=["character happily reading or enjoying a book"],
+                nice_to_have=["hugging book", "smiling while reading", "cozy book joy"],
+                emotion_target="happy, delighted, cozy",
+                avoid_elements=[
+                    "confused face",
+                    "sad reading",
+                    "angry reading",
+                    "book only with no character",
+                    "unrelated dancing",
+                ],
+                queries_giphy=[
+                    "cute animal reading book happy",
+                    "happy cat reading book",
+                    "cute character reading book",
+                    "cartoon happy reading",
+                    "cute animal hugging book",
+                    "cozy reading sticker",
+                ],
+                queries_fallback=[
+                    "happy reading book cartoon",
+                    "cute animal reading",
+                    "person happy reading book",
+                ],
+                continuity_tags=common_tags("reading", "payoff", "happy reading", "book joy"),
+            ),
+        ]
     # Worse / better escalation:
     # Quote pattern:
     # "Just when you think it can't get any worse, it can.
@@ -898,6 +1107,16 @@ def normalize_quote_plan(data: dict[str, Any], *, original_quote: dict[str, str]
         visual_world=visual_world,
         scene_plan=scene_plan,
     )
+
+    music_mood_tag = adjust_music_mood_by_context(
+        music_mood_tag,
+        text_original=text_original,
+        vi_short=vi_short,
+        motif_main=motif_main,
+        scene_plan=scene_plan,
+    )
+
+    mood = normalize_mood(music_mood_tag)
 
     normalized = {
         "schema_version": "quote_plan_v1",
