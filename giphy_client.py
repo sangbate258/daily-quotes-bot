@@ -34,7 +34,8 @@ QUERY_STOPWORDS = {
     "moving",
 }
 _GIPHY_DISABLED_UNTIL = 0.0
-
+_GIPHY_REQUEST_COUNT = 0
+_GIPHY_CACHE: dict[tuple[str, int, str], list[dict[str, Any]]] = {}
 
 class GiphyRateLimitError(RuntimeError):
     pass
@@ -50,7 +51,12 @@ def _giphy_cooldown_seconds() -> int:
 
 def _giphy_is_temporarily_disabled() -> bool:
     return time.time() < _GIPHY_DISABLED_UNTIL
-
+def _giphy_max_requests_per_run() -> int:
+    value = os.getenv("GIPHY_MAX_REQUESTS_PER_RUN", "45").strip()
+    try:
+        return int(value)
+    except ValueError:
+        return 45
 
 def compact_giphy_query(query: str, max_words: int = 5) -> str:
     tokens = re.findall(r"[a-zA-Z]+", (query or "").lower())
@@ -113,10 +119,8 @@ def _pick_best_media(images: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def search_giphy(
-    query: str, limit: int = 10, rating: str = "g"
-) -> list[dict[str, Any]]:
-    global _GIPHY_DISABLED_UNTIL
+def search_giphy(query: str, limit: int = 10, rating: str = "g") -> list[dict[str, Any]]:
+    global _GIPHY_DISABLED_UNTIL, _GIPHY_REQUEST_COUNT
 
     if _giphy_is_temporarily_disabled():
         remaining = int(_GIPHY_DISABLED_UNTIL - time.time())
@@ -125,7 +129,18 @@ def search_giphy(
 
     api_key = _require_api_key()
     compact_query = compact_giphy_query(query)
+    cache_key = (compact_query, int(limit), rating)
 
+    if cache_key in _GIPHY_CACHE:
+        print(f"[GIPHY CACHE] {compact_query}")
+        return [dict(item) for item in _GIPHY_CACHE[cache_key]]
+
+    max_requests = _giphy_max_requests_per_run()
+    if _GIPHY_REQUEST_COUNT >= max_requests:
+        raise GiphyRateLimitError(
+            f"GIPHY local request budget exceeded: {_GIPHY_REQUEST_COUNT}/{max_requests}. "
+            "Stop early to avoid real 429."
+        )
     params = {
         "api_key": api_key,
         "q": compact_query,
@@ -138,6 +153,7 @@ def search_giphy(
     print(f"[GIPHY] compact query: {compact_query}")
 
     try:
+        _GIPHY_REQUEST_COUNT += 1
         resp = requests.get(BASE_URL, params=params, timeout=30)
     except requests.RequestException as e:
         raise RuntimeError(
@@ -176,7 +192,7 @@ def search_giphy(
                 "height": media["height"],
             }
         )
-
+    _GIPHY_CACHE[cache_key] = [dict(item) for item in results]
     return results
 
 

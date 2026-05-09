@@ -5,6 +5,7 @@ import itertools
 import os
 import re
 import json
+import time
 from urllib.parse import urlparse
 
 from dotenv import load_dotenv
@@ -490,16 +491,26 @@ def safe_list(value: Any) -> list[Any]:
 
 
 def get_policy(media_input: dict[str, Any]) -> dict[str, Any]:
+    load_dotenv()
     policy = media_input.get("selection_policy")
     if not isinstance(policy, dict):
         policy = {}
+
+    env_query_rounds = env_int("QUERY_ROUNDS_BEFORE_FALLBACK", 2)
+    env_candidate_limit = env_int("GIPHY_CANDIDATE_LIMIT", 6)
 
     return {
         "source_priority": policy.get("source_priority", ["giphy", "pexels"]),
         "giphy_first": bool(policy.get("giphy_first", True)),
         "max_scenes": int(policy.get("max_scenes", 3)),
-        "candidate_limit_per_query": int(policy.get("candidate_limit_per_query", env_int("GIPHY_CANDIDATE_LIMIT", 20))),
-        "query_rounds_before_fallback": int(policy.get("query_rounds_before_fallback", 3)),
+        "candidate_limit_per_query": min(
+            int(policy.get("candidate_limit_per_query", env_candidate_limit)),
+            env_candidate_limit,
+        ),
+        "query_rounds_before_fallback": min(
+            int(policy.get("query_rounds_before_fallback", env_query_rounds)),
+            env_query_rounds,
+        ),
         "avoid_recent_media_days": int(policy.get("avoid_recent_media_days", MEDIA_REPEAT_WINDOW_DAYS)),
         # Keep this lower than final ideal because current scorer is metadata-only.
         # Once OCR/vision is added, 70 is more meaningful.
@@ -519,7 +530,10 @@ def get_policy(media_input: dict[str, Any]) -> dict[str, Any]:
             policy.get("allow_best_available_below_threshold", env_int("ALLOW_BEST_AVAILABLE", 0) == 1)
         ),
         "use_scene_retry": bool(policy.get("use_scene_retry", env_int("USE_SCENE_RETRY", 1) == 1)),
-        "scene_retry_query_rounds": int(policy.get("scene_retry_query_rounds", env_int("SCENE_RETRY_QUERY_ROUNDS", 4))),
+               "scene_retry_query_rounds": min(
+            int(policy.get("scene_retry_query_rounds", env_int("SCENE_RETRY_QUERY_ROUNDS", 1))),
+            env_int("SCENE_RETRY_QUERY_ROUNDS", 1),
+        ),
         "allow_unvisioned_candidates": bool(
             policy.get("allow_unvisioned_candidates", env_int("ALLOW_UNVISIONED_CANDIDATES", 0) == 1)
         ),
@@ -533,9 +547,6 @@ def get_policy(media_input: dict[str, Any]) -> dict[str, Any]:
             policy.get("relaxed_min_final_score", env_float("RELAXED_MIN_FINAL_SCORE", 50))
         ),
         "relaxed_min_role_score": float(
-            policy.get("relaxed_min_role_score", env_float("RELAXED_MIN_ROLE_SCORE", 4))
-        ),
-                "relaxed_min_role_score": float(
             policy.get("relaxed_min_role_score", env_float("RELAXED_MIN_ROLE_SCORE", 4))
         ),
         "allow_scene_drop_fallback": bool(
@@ -588,7 +599,21 @@ def infer_retry_family(scene_request: dict[str, Any]) -> str:
         "tan vỡ", "đau lòng",
     ]):
         return "sad_gloomy"
+    if any(k in text for k in [
+        "friend", "friends", "friendship", "bond", "connection", "connect",
+        "together", "best friend", "high five", "hug", "companionship",
+        "comfort", "support", "walking together",
+        "bạn", "tình bạn", "đồng hành", "ôm", "an ủi",
+    ]):
+        return "friendship_connection"
 
+    if any(k in text for k in [
+        "chocolate", "sweets", "sweet", "candy", "dessert", "cake",
+        "cookie", "ice cream", "snack", "eating chocolate", "eating sweets",
+        "đồ ngọt", "kẹo", "sô-cô-la", "socola", "bánh", "tráng miệng",
+        "ăn kẹo", "ăn đồ ngọt",
+    ]):
+        return "sweets_food"
     if any(k in text for k in [
         "happy dance", "happy jump", "joyful", "joy", "celebrate",
         "celebration", "proud", "excited", "cheer", "cheering",
@@ -643,12 +668,7 @@ def infer_retry_family(scene_request: dict[str, Any]) -> str:
     ]):
         return "books_reading"
 
-    if any(k in text for k in [
-        "friend", "friendship", "bond", "connection", "connect",
-        "together", "best friend", "high five", "hug", "companionship",
-        "comfort", "support", "bạn", "tình bạn", "đồng hành", "ôm", "an ủi",
-    ]):
-        return "friendship_connection"
+    
     if any(k in text for k in [
             "fail", "failure", "fall", "falling", "trip", "tripping", "clumsy",
             "mistake", "oops", "slip", "crash", "funny fail", "vấp", "té", "ngã",
@@ -737,6 +757,14 @@ def build_semantic_retry_queries(scene_request: dict[str, Any], family: str) -> 
             "cute character teaching lesson",
             "cartoon talking and pointing",
             "listener reaction cartoon",
+        ],
+                "sweets_food": [
+            "cute animal eating chocolate",
+            "cute animal eating candy",
+            "happy cartoon eating sweets",
+            "cute character eating dessert",
+            "cartoon chocolate happy",
+            "cute animal with cake",
         ],
                 "heart_feeling": [
             "cute heart sparkle",
@@ -2311,7 +2339,6 @@ QUY ƯỚC:
 - Chỉ trả JSON
 """.strip()
 
-
 def validate_selected_arc(
     video_context: dict[str, Any],
     scene_requests: list[dict[str, Any]],
@@ -2324,6 +2351,8 @@ def validate_selected_arc(
         raise RuntimeError("Arc validator: thiếu GOOGLE_API_KEY")
 
     model_name = os.getenv("GOOGLE_MODEL_NAME", "gemma-4-31b-it").strip() or "gemma-4-31b-it"
+    max_attempts = env_int("ARC_VALIDATION_RETRIES", 3)
+    retry_sleep_sec = env_float("ARC_VALIDATION_RETRY_SLEEP_SEC", 2.0)
 
     prompt = build_arc_validation_prompt(
         video_context=video_context,
@@ -2331,27 +2360,40 @@ def validate_selected_arc(
         selected_bundle=selected_bundle,
     )
 
-    client = genai.Client(api_key=api_key)
-    resp = client.models.generate_content(
-        model=model_name,
-        contents=prompt,
-    )
+    last_error: Exception | None = None
 
-    raw_text = resp.text or ""
-    data = _extract_json_object(raw_text)
+    for attempt in range(1, max_attempts + 1):
+        try:
+            client = genai.Client(api_key=api_key)
+            resp = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+            )
 
-    result = {
-        "arc_fit_score": int(data.get("arc_fit_score", 0) or 0),
-        "arc_decision": str(data.get("arc_decision", "fail") or "fail").strip().lower(),
-        "story_summary": str(data.get("story_summary", "") or "").strip(),
-        "missing_beats": data.get("missing_beats", []) or [],
-        "generic_mood_only": bool(data.get("generic_mood_only", False)),
-        "reason": str(data.get("reason", "") or "").strip(),
-        "_raw_model_text": raw_text,
-        "_model_name": model_name,
-    }
+            raw_text = resp.text or ""
+            data = _extract_json_object(raw_text)
 
-    return result
+            return {
+                "arc_fit_score": int(data.get("arc_fit_score", 0) or 0),
+                "arc_decision": str(data.get("arc_decision", "fail") or "fail").strip().lower(),
+                "story_summary": str(data.get("story_summary", "") or "").strip(),
+                "missing_beats": data.get("missing_beats", []) or [],
+                "generic_mood_only": bool(data.get("generic_mood_only", False)),
+                "reason": str(data.get("reason", "") or "").strip(),
+                "_raw_model_text": raw_text,
+                "_model_name": model_name,
+                "_attempt": attempt,
+            }
+
+        except Exception as e:
+            last_error = e
+            print(f"[ARC WARN] attempt {attempt}/{max_attempts} failed: {e}")
+
+            if attempt < max_attempts:
+                time.sleep(retry_sleep_sec)
+
+    raise RuntimeError(f"Arc validator failed after {max_attempts} attempts: {last_error}")
+
 def select_media_bundle(media_selector_input: dict[str, Any]) -> dict[str, Any]:
     """
     New Phase 3 selector.
