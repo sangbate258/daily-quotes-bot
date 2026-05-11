@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import random
 import shutil
 import traceback
@@ -26,7 +27,6 @@ from music_selector import select_music_track
 from timeline_builder import build_timeline
 from video_renderer import render_final_video
 
-
 APP_TZ = ZoneInfo("Asia/Ho_Chi_Minh")
 AUTHOR_REPEAT_WINDOW_DAYS = 7
 MAX_QUOTES_TO_TRY_PER_VIDEO = 6
@@ -39,6 +39,17 @@ UNKNOWN_AUTHORS = {
     "không rõ tác giả",
     "khong ro tac gia",
 }
+
+
+def env_int(name: str, default: int) -> int:
+    value = os.getenv(name, "").strip()
+    if not value:
+        return default
+
+    try:
+        return int(value)
+    except ValueError:
+        return default
 
 
 def now_local() -> datetime:
@@ -63,9 +74,17 @@ def normalize_author(author: str | None) -> str:
     return value or "Khuyết danh"
 
 
-def get_author_display(ai_data: dict[str, Any], fallback_author: str | None = None) -> str:
-    quote_source = ai_data.get("quote_source") if isinstance(ai_data.get("quote_source"), dict) else {}
-    author = quote_source.get("author_display") or ai_data.get("_author") or fallback_author
+def get_author_display(
+    ai_data: dict[str, Any], fallback_author: str | None = None
+) -> str:
+    quote_source = (
+        ai_data.get("quote_source")
+        if isinstance(ai_data.get("quote_source"), dict)
+        else {}
+    )
+    author = (
+        quote_source.get("author_display") or ai_data.get("_author") or fallback_author
+    )
     return normalize_author(str(author or ""))
 
 
@@ -87,10 +106,12 @@ def slugify(text: str, max_len: int = 48) -> str:
             allowed.append("_")
             last_underscore = True
     slug = "".join(allowed).strip("_")
-    return (slug[:max_len].strip("_") or "quote_video")
+    return slug[:max_len].strip("_") or "quote_video"
 
 
-def author_used_recently(author_display: str, days: int = AUTHOR_REPEAT_WINDOW_DAYS) -> bool:
+def author_used_recently(
+    author_display: str, days: int = AUTHOR_REPEAT_WINDOW_DAYS
+) -> bool:
     # Không khóa quá chặt với tác giả không rõ, vì nhiều quote unknown có thể dùng được.
     if remove_vietnamese_accents(author_display).lower() in UNKNOWN_AUTHORS:
         return False
@@ -124,7 +145,15 @@ def choose_candidate_quote(candidates: list[CandidateQuote]) -> CandidateQuote:
 
 
 def validate_ai_data(ai_data: dict[str, Any]) -> None:
-    required = ["vi_full", "vi_short", "caption", "lane", "mood", "music_mood_tag", "scenes"]
+    required = [
+        "vi_full",
+        "vi_short",
+        "caption",
+        "lane",
+        "mood",
+        "music_mood_tag",
+        "scenes",
+    ]
     missing = [key for key in required if not ai_data.get(key)]
     if missing:
         raise RuntimeError(f"AI output thiếu trường bắt buộc: {', '.join(missing)}")
@@ -138,24 +167,95 @@ def validate_ai_data(ai_data: dict[str, Any]) -> None:
     # Phase 2: nếu có schema mới, cũng giới hạn scene_plan để đồng bộ.
     if isinstance(ai_data.get("scene_plan"), list):
         ai_data["scene_plan"] = ai_data["scene_plan"][:3]
+
+
 EASY_VISUAL_TERMS = {
-    "cat", "dog", "animal", "cute", "friend", "friends", "hug", "help", "support",
-    "book", "books", "reading", "library", "thinking", "confused", "searching",
-    "magnifying", "walking", "dance", "celebrate", "success", "rocket", "work",
-    "typing", "building", "drawing", "painting", "smile", "calm", "relaxed",
-    "shrug", "heart", "love", "flower", "garden", "fall", "trip", "fail",
-    "chó", "mèo", "sách", "đọc", "bạn", "ôm", "giúp", "cười", "bình yên",
-    "nhảy", "thành công", "làm việc", "vẽ", "xây", "té", "ngã",
+    "cat",
+    "dog",
+    "animal",
+    "cute",
+    "friend",
+    "friends",
+    "hug",
+    "help",
+    "support",
+    "book",
+    "books",
+    "reading",
+    "library",
+    "thinking",
+    "confused",
+    "searching",
+    "magnifying",
+    "walking",
+    "dance",
+    "celebrate",
+    "success",
+    "rocket",
+    "work",
+    "typing",
+    "building",
+    "drawing",
+    "painting",
+    "smile",
+    "calm",
+    "relaxed",
+    "shrug",
+    "heart",
+    "love",
+    "flower",
+    "garden",
+    "fall",
+    "trip",
+    "fail",
+    "chó",
+    "mèo",
+    "sách",
+    "đọc",
+    "bạn",
+    "ôm",
+    "giúp",
+    "cười",
+    "bình yên",
+    "nhảy",
+    "thành công",
+    "làm việc",
+    "vẽ",
+    "xây",
+    "té",
+    "ngã",
 }
 
 HARD_ABSTRACT_TERMS = {
-    "fake persona", "persona", "mask", "identity", "self-deception",
-    "perspective shift", "perspective", "painful clarity", "clarity",
-    "illusion", "truth", "existential", "ego", "soul", "metaphor",
-    "inside a dog's belly", "dog's belly", "belly", "mimic perspective",
-    "the mask", "the mirror",
-    "bản ngã", "danh tính", "mặt nạ", "ảo tưởng", "sự thật",
-    "góc nhìn", "ẩn dụ", "linh hồn",
+    "fake persona",
+    "persona",
+    "mask",
+    "identity",
+    "self-deception",
+    "perspective shift",
+    "perspective",
+    "painful clarity",
+    "clarity",
+    "illusion",
+    "truth",
+    "existential",
+    "ego",
+    "soul",
+    "metaphor",
+    "inside a dog's belly",
+    "dog's belly",
+    "belly",
+    "mimic perspective",
+    "the mask",
+    "the mirror",
+    "bản ngã",
+    "danh tính",
+    "mặt nạ",
+    "ảo tưởng",
+    "sự thật",
+    "góc nhìn",
+    "ẩn dụ",
+    "linh hồn",
 }
 
 
@@ -239,7 +339,12 @@ def assess_quote_visual_complexity(ai_data: dict[str, Any]) -> dict[str, Any]:
             scene_text += " "
             scene_text += " ".join(
                 str(x)
-                for key in ["must_have_elements", "must_show", "queries_giphy", "queries_fallback"]
+                for key in [
+                    "must_have_elements",
+                    "must_show",
+                    "queries_giphy",
+                    "queries_fallback",
+                ]
                 for x in (scene.get(key) if isinstance(scene.get(key), list) else [])
             ).lower()
 
@@ -255,7 +360,9 @@ def assess_quote_visual_complexity(ai_data: dict[str, Any]) -> dict[str, Any]:
         reasons.append(f"hard_abstract_terms:{', '.join(hard_hits[:5])}")
 
     if scene_without_easy_visual >= 2:
-        reasons.append(f"too_many_scenes_without_easy_visual:{scene_without_easy_visual}")
+        reasons.append(
+            f"too_many_scenes_without_easy_visual:{scene_without_easy_visual}"
+        )
 
     if len(easy_hits) < 2:
         reasons.append("not_enough_easy_visual_terms")
@@ -276,9 +383,27 @@ def reject_if_quote_too_complex(ai_data: dict[str, Any]) -> None:
     result = assess_quote_visual_complexity(ai_data)
     ai_data["quote_complexity_gate"] = result
 
-    if not result["accepted"]:
-        print("[COMPLEXITY SKIP]", result)
-        raise RuntimeError(f"Quote Complexity Gate rejected: {result}")
+    if not result.get("accepted"):
+        has_easy_visual_plan = (
+            result.get("scene_count", 0) >= 2
+            and result.get("scene_without_easy_visual", 999) == 0
+            and len(result.get("easy_hits", [])) >= 3
+        )
+
+        only_abstract_reason = all(
+            str(reason).startswith("hard_abstract_terms:")
+            for reason in result.get("reasons", [])
+        )
+
+        if has_easy_visual_plan and only_abstract_reason:
+            result["accepted"] = True
+            result.setdefault("reasons", []).append("override_easy_visual_plan")
+            print("[COMPLEXITY OVERRIDE]", result)
+        else:
+            print("[COMPLEXITY SKIP]", result)
+            raise RuntimeError(f"Quote Complexity Gate rejected: {result}")
+        
+
 
 def build_media_selector_input(ai_data: dict[str, Any]) -> dict[str, Any]:
     """
@@ -287,9 +412,21 @@ def build_media_selector_input(ai_data: dict[str, Any]) -> dict[str, Any]:
     Tạo input chuẩn cho media selector theo schema mới.
     Từ Phase 4, main.py sẽ truyền object này vào select_media_bundle() thật.
     """
-    quote_source = ai_data.get("quote_source") if isinstance(ai_data.get("quote_source"), dict) else {}
-    classification = ai_data.get("classification") if isinstance(ai_data.get("classification"), dict) else {}
-    visual_plan = ai_data.get("visual_plan") if isinstance(ai_data.get("visual_plan"), dict) else {}
+    quote_source = (
+        ai_data.get("quote_source")
+        if isinstance(ai_data.get("quote_source"), dict)
+        else {}
+    )
+    classification = (
+        ai_data.get("classification")
+        if isinstance(ai_data.get("classification"), dict)
+        else {}
+    )
+    visual_plan = (
+        ai_data.get("visual_plan")
+        if isinstance(ai_data.get("visual_plan"), dict)
+        else {}
+    )
 
     scene_requests = get_scene_requests(ai_data)
 
@@ -308,10 +445,7 @@ def build_media_selector_input(ai_data: dict[str, Any]) -> dict[str, Any]:
             "source_priority": ["giphy", "pexels"],
             "giphy_first": True,
             "max_scenes": min(len(scene_requests), 3),
-            "candidate_limit_per_query": 20,
-            "query_rounds_before_fallback": 3,
             "avoid_recent_media_days": 30,
-            "min_acceptable_score": 70,
             "require_text_free_media": True,
             "require_visual_consistency": True,
         },
@@ -347,7 +481,9 @@ def get_scene_requests(ai_data: dict[str, Any]) -> list[dict[str, Any]]:
     return result
 
 
-def select_and_download_scene_media(media_selector_input: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+def select_and_download_scene_media(
+    media_selector_input: dict[str, Any],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """
     Phase 4: dùng select_media_bundle() thật.
 
@@ -381,7 +517,9 @@ def select_and_download_scene_media(media_selector_input: dict[str, Any]) -> tup
         picked["_scene_role"] = scene_result.get("scene_role", "")
         picked["_visual_goal"] = scene_result.get("visual_goal", "")
         picked["_selection_score"] = (
-            scene_result.get("score_breakdown", {}) if isinstance(scene_result.get("score_breakdown"), dict) else {}
+            scene_result.get("score_breakdown", {})
+            if isinstance(scene_result.get("score_breakdown"), dict)
+            else {}
         ).get("total_score")
         picked["_score_breakdown"] = scene_result.get("score_breakdown", {})
         picked["_judge_summary"] = scene_result.get("judge_summary", {})
@@ -400,9 +538,17 @@ def build_video_slug(slot_index: int, quote_text: str) -> str:
 
 
 def make_social_caption(config: AppConfig, ai_data: dict[str, Any]) -> str:
-    text_output = ai_data.get("text_output") if isinstance(ai_data.get("text_output"), dict) else {}
+    text_output = (
+        ai_data.get("text_output")
+        if isinstance(ai_data.get("text_output"), dict)
+        else {}
+    )
 
-    dynamic = (text_output.get("dynamic_hashtag") or ai_data.get("dynamic_hashtag") or "#wisdom").strip()
+    dynamic = (
+        text_output.get("dynamic_hashtag")
+        or ai_data.get("dynamic_hashtag")
+        or "#wisdom"
+    ).strip()
     if not dynamic.startswith("#"):
         dynamic = f"#{dynamic}"
 
@@ -412,7 +558,9 @@ def make_social_caption(config: AppConfig, ai_data: dict[str, Any]) -> str:
 
 def write_metadata(config: AppConfig, slug: str, metadata: dict[str, Any]) -> Path:
     out_path = config.output_dir / f"{slug}.json"
-    out_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
+    out_path.write_text(
+        json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     return out_path
 
 
@@ -465,7 +613,10 @@ def register_success_in_db(
                 (
                     media_key,
                     media.get("source", "unknown"),
-                    media.get("media_url") or media.get("mp4_url") or media.get("gif_url") or "",
+                    media.get("media_url")
+                    or media.get("mp4_url")
+                    or media.get("gif_url")
+                    or "",
                     "video" if media.get("mp4_url") else "gif",
                     slug,
                 ),
@@ -492,7 +643,11 @@ def register_success_in_db(
                 social_caption,
                 json.dumps(hashtags, ensure_ascii=False),
                 "sent_to_telegram" if telegram_message_id else "created",
-                now_local().isoformat(timespec="seconds") if telegram_message_id else None,
+                (
+                    now_local().isoformat(timespec="seconds")
+                    if telegram_message_id
+                    else None
+                ),
                 telegram_message_id,
             ),
         )
@@ -512,7 +667,12 @@ def create_run_row(run_date: str, attempt_number: int) -> int:
         return int(cur.lastrowid)
 
 
-def finish_run_row(run_id: int, status: str, error_step: str | None = None, error_message: str | None = None) -> None:
+def finish_run_row(
+    run_id: int,
+    status: str,
+    error_step: str | None = None,
+    error_message: str | None = None,
+) -> None:
     with get_connection() as conn:
         conn.execute(
             """
@@ -572,7 +732,9 @@ async def send_telegram_error(config: AppConfig, text: str) -> None:
     )
 
 
-def render_to_slugged_output(config: AppConfig, timeline: dict[str, Any], slug: str) -> Path:
+def render_to_slugged_output(
+    config: AppConfig, timeline: dict[str, Any], slug: str
+) -> Path:
     rendered_path = render_final_video(timeline)
     if not rendered_path.exists():
         raise RuntimeError(f"Renderer không tạo ra file: {rendered_path}")
@@ -582,7 +744,9 @@ def render_to_slugged_output(config: AppConfig, timeline: dict[str, Any], slug: 
     return final_path
 
 
-async def generate_one_video(config: AppConfig, slot_index: int, attempt_number: int) -> Path:
+async def generate_one_video(
+    config: AppConfig, slot_index: int, attempt_number: int
+) -> Path:
     run_date = now_local().strftime("%Y-%m-%d")
     run_id = create_run_row(run_date, attempt_number)
 
@@ -593,8 +757,11 @@ async def generate_one_video(config: AppConfig, slot_index: int, attempt_number:
             raise RuntimeError("Không còn quote hợp lệ sau khi lọc trùng/dài")
 
         last_error: Exception | None = None
-
-        for _ in range(min(MAX_QUOTES_TO_TRY_PER_VIDEO, len(candidates))):
+        max_quotes_to_try = max(
+            1, env_int("MAX_QUOTES_TO_TRY_PER_VIDEO", MAX_QUOTES_TO_TRY_PER_VIDEO)
+        )
+        print(f"[QUOTE TRY LIMIT] {max_quotes_to_try}")
+        for _ in range(min(max_quotes_to_try, len(candidates))):
             quote = choose_candidate_quote(candidates)
             candidates.remove(quote)
 
@@ -612,10 +779,23 @@ async def generate_one_video(config: AppConfig, slot_index: int, attempt_number:
                 reject_if_quote_too_complex(ai_data)
                 # Phase 4: build schema input và dùng bundle selector thật.
                 media_selector_input = build_media_selector_input(ai_data)
-                selected_media, media_result = select_and_download_scene_media(media_selector_input)
-                print("[MEDIA] selection summary:", json.dumps(media_result.get("video_selection_summary", {}), ensure_ascii=False))
+                selected_media, media_result = select_and_download_scene_media(
+                    media_selector_input
+                )
+                print(
+                    "[MEDIA] selection summary:",
+                    json.dumps(
+                        media_result.get("video_selection_summary", {}),
+                        ensure_ascii=False,
+                    ),
+                )
                 music_data = select_music_track(ai_data["music_mood_tag"])
-                timeline = build_timeline(ai_data, selected_media, music_data, get_author_display(ai_data, quote.author))
+                timeline = build_timeline(
+                    ai_data,
+                    selected_media,
+                    music_data,
+                    get_author_display(ai_data, quote.author),
+                )
 
                 slug = build_video_slug(slot_index, ai_data["vi_short"])
                 social_caption = make_social_caption(config, ai_data)
@@ -648,7 +828,9 @@ async def generate_one_video(config: AppConfig, slot_index: int, attempt_number:
 
                 # Lưu timeline/debug trước render để dễ xem lỗi nếu FFmpeg fail.
                 timeline_debug_path = config.output_dir / f"{slug}_timeline.json"
-                timeline_debug_path.write_text(json.dumps(timeline, ensure_ascii=False, indent=2), encoding="utf-8")
+                timeline_debug_path.write_text(
+                    json.dumps(timeline, ensure_ascii=False, indent=2), encoding="utf-8"
+                )
 
                 video_path = render_to_slugged_output(config, timeline, slug)
                 metadata["video_path"] = str(video_path)
@@ -670,7 +852,10 @@ async def generate_one_video(config: AppConfig, slot_index: int, attempt_number:
                     )
                 except Exception as telegram_exc:
                     telegram_error = str(telegram_exc)
-                    print("[WARN] Telegram send failed, but rendered video is kept:", telegram_error)
+                    print(
+                        "[WARN] Telegram send failed, but rendered video is kept:",
+                        telegram_error,
+                    )
 
                 if telegram_error:
                     metadata["telegram_error"] = telegram_error
@@ -691,7 +876,9 @@ async def generate_one_video(config: AppConfig, slot_index: int, attempt_number:
                 finish_run_row(run_id, "success")
                 print(f"[OK] Video created: {video_path}")
                 if telegram_error:
-                    print("[WARN] Video was NOT sent to Telegram. Check metadata for telegram_error.")
+                    print(
+                        "[WARN] Video was NOT sent to Telegram. Check metadata for telegram_error."
+                    )
                 return video_path
 
             except Exception as quote_error:
@@ -699,10 +886,14 @@ async def generate_one_video(config: AppConfig, slot_index: int, attempt_number:
                 print("[WARN] Quote candidate failed:", quote_error)
                 continue
 
-        raise RuntimeError(f"Thử nhiều quote nhưng không tạo được video. Lỗi cuối: {last_error}")
+        raise RuntimeError(
+            f"Thử nhiều quote nhưng không tạo được video. Lỗi cuối: {last_error}"
+        )
 
     except Exception as e:
-        finish_run_row(run_id, "failed", error_step="generate_one_video", error_message=str(e))
+        finish_run_row(
+            run_id, "failed", error_step="generate_one_video", error_message=str(e)
+        )
         raise
 
 
@@ -716,7 +907,9 @@ async def run_daily(config: AppConfig, videos: int) -> None:
             # Retry 1 lần nếu còn trong khung giờ. Khi test bằng --ignore-window, retry luôn.
             try:
                 if inside_run_window(config):
-                    await generate_one_video(config, slot_index=slot_index, attempt_number=2)
+                    await generate_one_video(
+                        config, slot_index=slot_index, attempt_number=2
+                    )
                 else:
                     raise RuntimeError("Hết khung giờ retry") from first_error
             except Exception as second_error:
@@ -729,21 +922,31 @@ async def run_daily(config: AppConfig, videos: int) -> None:
                 try:
                     await send_telegram_error(config, error_text)
                 except Exception as telegram_error:
-                    print("[WARN] Could not send Telegram error message:", telegram_error)
+                    print(
+                        "[WARN] Could not send Telegram error message:", telegram_error
+                    )
                     print(error_text)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Daily quote video bot MVP")
-    parser.add_argument("--videos", type=int, default=None, help="Số video cần tạo trong lần chạy này")
-    parser.add_argument("--ignore-window", action="store_true", help="Bỏ qua khung giờ 15:30-16:00 để test thủ công")
+    parser.add_argument(
+        "--videos", type=int, default=None, help="Số video cần tạo trong lần chạy này"
+    )
+    parser.add_argument(
+        "--ignore-window",
+        action="store_true",
+        help="Bỏ qua khung giờ 15:30-16:00 để test thủ công",
+    )
     args = parser.parse_args()
 
     config = load_config()
     init_db()
 
     if not args.ignore_window and not inside_run_window(config):
-        print(f"Ngoài khung giờ chạy ({config.run_start}-{config.run_deadline}). Dùng --ignore-window để test.")
+        print(
+            f"Ngoài khung giờ chạy ({config.run_start}-{config.run_deadline}). Dùng --ignore-window để test."
+        )
         return
 
     videos = args.videos if args.videos is not None else config.videos_per_day

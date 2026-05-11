@@ -17,14 +17,41 @@ from giphy_client import search_giphy, GiphyRateLimitError
 from pexels_client import search_pexels_videos
 from media_previewer import ensure_preview_sheet
 
-
 MEDIA_REPEAT_WINDOW_DAYS = 30
 
 STOPWORDS = {
-    "a", "an", "the", "of", "in", "on", "to", "for", "with", "and", "or",
-    "one", "person", "people", "someone", "somebody", "man", "woman",
-    "very", "really", "just", "that", "this", "those", "these",
-    "slow", "motion", "close", "shot", "wide", "cinematic", "aesthetic",
+    "a",
+    "an",
+    "the",
+    "of",
+    "in",
+    "on",
+    "to",
+    "for",
+    "with",
+    "and",
+    "or",
+    "one",
+    "person",
+    "people",
+    "someone",
+    "somebody",
+    "man",
+    "woman",
+    "very",
+    "really",
+    "just",
+    "that",
+    "this",
+    "those",
+    "these",
+    "slow",
+    "motion",
+    "close",
+    "shot",
+    "wide",
+    "cinematic",
+    "aesthetic",
 }
 
 # These are not always bad in the whole world, but for your quote-video style
@@ -32,10 +59,25 @@ STOPWORDS = {
 HARD_BAD_TERMS = {
     # Keep only strong metadata risks here.
     # Do NOT hard-ban meme/reaction/cartoon/funny because the target style may use them.
-    "interview", "talkshow", "talk show", "late night", "podcast",
-    "news", "cnn", "fox", "bbc", "msnbc",
-    "celebrity", "red carpet", "award", "oscars", "grammy",
-    "tiktok", "youtube", "shorts", "reels",
+    "interview",
+    "talkshow",
+    "talk show",
+    "late night",
+    "podcast",
+    "news",
+    "cnn",
+    "fox",
+    "bbc",
+    "msnbc",
+    "celebrity",
+    "red carpet",
+    "award",
+    "oscars",
+    "grammy",
+    "tiktok",
+    "youtube",
+    "shorts",
+    "reels",
 }
 
 # Domain/source hints that often mean the GIF is from pop-culture footage.
@@ -47,12 +89,44 @@ SOURCE_BAD_HINTS = {
 
 # Words that tend to be visually clean and match your intended vibe.
 GOOD_VIBE_TERMS = {
-    "nature", "sunrise", "sunset", "walking", "road", "mirror", "rain",
-    "window", "alone", "quiet", "calm", "hands", "plant", "sprout",
-    "mountain", "ocean", "forest", "city", "crowd", "shadow", "light",
-    "smile", "hug", "books", "library", "work", "desk", "thinking",
-    "home", "room", "shelf", "bookshelf", "reflection", "friend",
-    "friends", "comfort", "hugging", "reading",
+    "nature",
+    "sunrise",
+    "sunset",
+    "walking",
+    "road",
+    "mirror",
+    "rain",
+    "window",
+    "alone",
+    "quiet",
+    "calm",
+    "hands",
+    "plant",
+    "sprout",
+    "mountain",
+    "ocean",
+    "forest",
+    "city",
+    "crowd",
+    "shadow",
+    "light",
+    "smile",
+    "hug",
+    "books",
+    "library",
+    "work",
+    "desk",
+    "thinking",
+    "home",
+    "room",
+    "shelf",
+    "bookshelf",
+    "reflection",
+    "friend",
+    "friends",
+    "comfort",
+    "hugging",
+    "reading",
 }
 
 
@@ -62,72 +136,229 @@ GOOD_VIBE_TERMS = {
 SCENE_ROLE_INTENTS = {
     "external_negation": {
         "wanted": {
-            "no", "stop", "cannot", "cant", "can't", "dont", "don't",
-            "forbidden", "warning", "warn", "reject", "refuse", "limit",
-            "limitation", "restriction", "teacher", "pointing", "talking",
-            "lecture", "scolding", "argue", "argument", "deny", "denial",
+            "no",
+            "stop",
+            "cannot",
+            "cant",
+            "can't",
+            "dont",
+            "don't",
+            "forbidden",
+            "warning",
+            "warn",
+            "reject",
+            "refuse",
+            "limit",
+            "limitation",
+            "restriction",
+            "teacher",
+            "pointing",
+            "talking",
+            "lecture",
+            "scolding",
+            "argue",
+            "argument",
+            "deny",
+            "denial",
         },
         "avoid": {
-            "dance", "dancing", "celebration", "celebrate", "party",
-            "victory", "sleep", "sleepy", "relax",
+            "dance",
+            "dancing",
+            "celebration",
+            "celebrate",
+            "party",
+            "victory",
+            "sleep",
+            "sleepy",
+            "relax",
         },
     },
     "negative_escalation": {
         "wanted": {
-            "worse", "bad", "problem", "problems", "wrong", "fail", "failure",
-            "disaster", "pile", "chain", "reaction", "escalation", "escalating",
-            "collapse", "crash", "break", "broken", "chaos", "mess", "trouble",
-            "unlucky", "badluck", "accident", "oh", "no",
+            "worse",
+            "bad",
+            "problem",
+            "problems",
+            "wrong",
+            "fail",
+            "failure",
+            "disaster",
+            "pile",
+            "chain",
+            "reaction",
+            "escalation",
+            "escalating",
+            "collapse",
+            "crash",
+            "break",
+            "broken",
+            "chaos",
+            "mess",
+            "trouble",
+            "unlucky",
+            "badluck",
+            "accident",
+            "oh",
+            "no",
         },
         "avoid": {
-            "dance", "dancing", "celebration", "celebrate", "party", "victory",
-            "success", "rocket", "launch", "happy", "joy", "relax", "sleep",
+            "dance",
+            "dancing",
+            "celebration",
+            "celebrate",
+            "party",
+            "victory",
+            "success",
+            "rocket",
+            "launch",
+            "happy",
+            "joy",
+            "relax",
+            "sleep",
         },
     },
     "positive_escalation": {
         "wanted": {
-            "better", "good", "great", "wonderful", "possible", "possibility",
-            "breakthrough", "success", "achieve", "achievement", "rocket", "launch",
-            "flying", "fly", "wow", "invention", "invent", "discovery", "dream",
-            "real", "reality", "miracle", "victory", "celebration", "surprise",
-            "news", "upgrade", "level", "up", "freedom", "free",
+            "better",
+            "good",
+            "great",
+            "wonderful",
+            "possible",
+            "possibility",
+            "breakthrough",
+            "success",
+            "achieve",
+            "achievement",
+            "rocket",
+            "launch",
+            "flying",
+            "fly",
+            "wow",
+            "invention",
+            "invent",
+            "discovery",
+            "dream",
+            "real",
+            "reality",
+            "miracle",
+            "victory",
+            "celebration",
+            "surprise",
+            "news",
+            "upgrade",
+            "level",
+            "up",
+            "freedom",
+            "free",
         },
         "avoid": {
-            "sad", "crying", "stuck", "restriction", "forbidden", "stop", "no",
-            "bad", "worse", "wrong", "fail", "failure", "disaster", "sleep",
+            "sad",
+            "crying",
+            "stuck",
+            "restriction",
+            "forbidden",
+            "stop",
+            "no",
+            "bad",
+            "worse",
+            "wrong",
+            "fail",
+            "failure",
+            "disaster",
+            "sleep",
         },
     },
     "reflection": {
         "wanted": {
-            "thinking", "think", "listen", "listening", "hear", "hearing",
-            "confused", "wondering", "processing", "ponder", "idea",
-            "mind", "brain", "realize", "realization", "question",
-            "attentive", "contemplate", "contemplating",
+            "thinking",
+            "think",
+            "listen",
+            "listening",
+            "hear",
+            "hearing",
+            "confused",
+            "wondering",
+            "processing",
+            "ponder",
+            "idea",
+            "mind",
+            "brain",
+            "realize",
+            "realization",
+            "question",
+            "attentive",
+            "contemplate",
+            "contemplating",
         },
         "avoid": {
-            "party", "chaos", "fighting", "fight", "explosion",
-            "celebration", "jackhammer",
+            "party",
+            "chaos",
+            "fighting",
+            "fight",
+            "explosion",
+            "celebration",
+            "jackhammer",
         },
     },
     "breakthrough": {
         "wanted": {
-            "possible", "possibility", "breakthrough", "success", "achieve",
-            "achievement", "rocket", "launch", "flying", "fly", "wow",
-            "invention", "invent", "discovery", "dream", "real", "reality",
-            "miracle", "victory", "celebration", "freedom", "free",
+            "possible",
+            "possibility",
+            "breakthrough",
+            "success",
+            "achieve",
+            "achievement",
+            "rocket",
+            "launch",
+            "flying",
+            "fly",
+            "wow",
+            "invention",
+            "invent",
+            "discovery",
+            "dream",
+            "real",
+            "reality",
+            "miracle",
+            "victory",
+            "celebration",
+            "freedom",
+            "free",
         },
         "avoid": {
-            "sad", "crying", "stuck", "restriction", "forbidden",
-            "stop", "no", "sleep", "sleepy", "failure",
+            "sad",
+            "crying",
+            "stuck",
+            "restriction",
+            "forbidden",
+            "stop",
+            "no",
+            "sleep",
+            "sleepy",
+            "failure",
         },
     },
     "connection": {
         "wanted": {
-            "friend", "friends", "hug", "together", "walking", "side",
-            "beside", "comfort", "help", "support", "high", "five",
+            "friend",
+            "friends",
+            "hug",
+            "together",
+            "walking",
+            "side",
+            "beside",
+            "comfort",
+            "help",
+            "support",
+            "high",
+            "five",
         },
         "avoid": {
-            "alone", "fight", "fighting", "reject", "ignore",
+            "alone",
+            "fight",
+            "fighting",
+            "reject",
+            "ignore",
         },
     },
 }
@@ -153,6 +384,69 @@ def env_float(name: str, default: float) -> float:
         return default
 
 
+VISION_DISABLED_MODELS: set[str] = set()
+VISION_MODEL_ERROR_COUNTS: dict[str, int] = {}
+
+
+def env_model_list(name: str) -> list[str]:
+    value = os.getenv(name, "").strip()
+    if not value:
+        return []
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def is_quota_error(error: Exception) -> bool:
+    text = str(error).lower()
+    return (
+        "429" in text
+        or "resource_exhausted" in text
+        or "quota exceeded" in text
+        or "generate_content_free_tier_requests" in text
+    )
+
+
+def is_model_unstable_error(error: Exception) -> bool:
+    text = str(error).lower()
+    return (
+        "500 internal" in text
+        or "503 unavailable" in text
+        or "404 not_found" in text
+        or "requested entity was not found" in text
+    )
+
+
+def should_disable_unstable_model(model_name: str, error: Exception) -> bool:
+    text = str(error).lower()
+
+    if "404 not_found" in text or "requested entity was not found" in text:
+        return True
+
+    if not is_model_unstable_error(error):
+        return False
+
+    VISION_MODEL_ERROR_COUNTS[model_name] = (
+        VISION_MODEL_ERROR_COUNTS.get(model_name, 0) + 1
+    )
+
+    threshold = env_int("GOOGLE_VISION_DISABLE_AFTER_ERRORS", 3)
+    return VISION_MODEL_ERROR_COUNTS[model_name] >= threshold
+
+
+def get_vision_model_candidates() -> list[str]:
+    primary = (
+        os.getenv("GOOGLE_VISION_MODEL_NAME", "").strip()
+        or os.getenv("GOOGLE_MODEL_NAME", "").strip()
+        or "gemma-4-31b-it"
+    )
+
+    fallback_models = env_model_list("GOOGLE_VISION_FALLBACK_MODEL_NAME")
+
+    models: list[str] = []
+    for model_name in [primary, *fallback_models]:
+        if model_name and model_name not in models:
+            models.append(model_name)
+
+    return models
 def tokenize(text: str) -> set[str]:
     text = (text or "").lower()
     tokens = re.findall(r"[a-zA-Z]+", text)
@@ -285,7 +579,9 @@ def dimension_score(width: Any, height: Any, *, source: str) -> float:
     return score
 
 
-def score_candidate(query: str, item: dict[str, Any], *, source: str) -> tuple[float, list[str]]:
+def score_candidate(
+    query: str, item: dict[str, Any], *, source: str
+) -> tuple[float, list[str]]:
     """
     Old compact scorer kept for backward compatibility with select_media_for_scene().
     """
@@ -315,7 +611,9 @@ def score_candidate(query: str, item: dict[str, Any], *, source: str) -> tuple[f
         score -= 8.0
         reasons.append(bad_reason)
 
-    ds = dimension_score(normalized.get("width"), normalized.get("height"), source=source)
+    ds = dimension_score(
+        normalized.get("width"), normalized.get("height"), source=source
+    )
     score += ds
     reasons.append(f"dimension_score={ds:.1f}")
 
@@ -389,7 +687,9 @@ def build_query_variants(search_query_en: str) -> list[str]:
         variants.append(f"cinematic {base}")
 
     # If the query is too literal and GIPHY fails, a simpler motif query may work better.
-    tokens = [t for t in re.findall(r"[a-zA-Z]+", base) if t not in STOPWORDS and len(t) >= 3]
+    tokens = [
+        t for t in re.findall(r"[a-zA-Z]+", base) if t not in STOPWORDS and len(t) >= 3
+    ]
     if 2 <= len(tokens) <= 6:
         variants.append(" ".join(tokens[:4]))
 
@@ -482,6 +782,7 @@ def select_media_for_scene(
 # Phase 3: Bundle selector
 # ---------------------------------------------------------------------------
 
+
 def safe_list(value: Any) -> list[Any]:
     if isinstance(value, list):
         return value
@@ -511,46 +812,100 @@ def get_policy(media_input: dict[str, Any]) -> dict[str, Any]:
             int(policy.get("query_rounds_before_fallback", env_query_rounds)),
             env_query_rounds,
         ),
-        "avoid_recent_media_days": int(policy.get("avoid_recent_media_days", MEDIA_REPEAT_WINDOW_DAYS)),
+        "avoid_recent_media_days": int(
+            policy.get("avoid_recent_media_days", MEDIA_REPEAT_WINDOW_DAYS)
+        ),
         # Keep this lower than final ideal because current scorer is metadata-only.
         # Once OCR/vision is added, 70 is more meaningful.
-        "min_acceptable_score": float(policy.get("min_acceptable_score", env_float("MEDIA_BUNDLE_MIN_SCORE", 38))),
-        "require_text_free_media": bool(policy.get("require_text_free_media", True)),
-        "require_visual_consistency": bool(policy.get("require_visual_consistency", True)),
-        "shortlist_size_per_scene": int(policy.get("shortlist_size_per_scene", env_int("SHORTLIST_SIZE_PER_SCENE", 5))),
-        "use_vision_rerank": bool(policy.get("use_vision_rerank", env_int("USE_VISION_RERANK", 1) == 1)),
-        "vision_rerank_top_k": int(policy.get("vision_rerank_top_k", env_int("VISION_RERANK_TOP_K", 3))),
-        "vision_weight": float(policy.get("vision_weight", env_float("VISION_WEIGHT", 0.55))),
-        "metadata_weight": float(policy.get("metadata_weight", env_float("METADATA_WEIGHT", 0.45))),
-        "min_final_scene_score": float(policy.get("min_final_scene_score", env_float("MIN_FINAL_SCENE_SCORE", 55))),
-        "min_vision_scene_score": float(policy.get("min_vision_scene_score", env_float("MIN_VISION_SCENE_SCORE", 45))),
-        "min_scene_role_match_score": float(policy.get("min_scene_role_match_score", env_float("MIN_SCENE_ROLE_MATCH_SCORE", 4))),
-        "min_metadata_scene_score": float(policy.get("min_metadata_scene_score", env_float("MIN_METADATA_SCENE_SCORE", 38))),
-        "allow_best_available_below_threshold": bool(
-            policy.get("allow_best_available_below_threshold", env_int("ALLOW_BEST_AVAILABLE", 0) == 1)
+        "min_acceptable_score": float(
+            policy.get("min_acceptable_score", env_float("MEDIA_BUNDLE_MIN_SCORE", 38))
         ),
-        "use_scene_retry": bool(policy.get("use_scene_retry", env_int("USE_SCENE_RETRY", 1) == 1)),
-               "scene_retry_query_rounds": min(
-            int(policy.get("scene_retry_query_rounds", env_int("SCENE_RETRY_QUERY_ROUNDS", 1))),
+        "require_text_free_media": bool(policy.get("require_text_free_media", True)),
+        "require_visual_consistency": bool(
+            policy.get("require_visual_consistency", True)
+        ),
+        "shortlist_size_per_scene": int(
+            policy.get(
+                "shortlist_size_per_scene", env_int("SHORTLIST_SIZE_PER_SCENE", 5)
+            )
+        ),
+        "use_vision_rerank": bool(
+            policy.get("use_vision_rerank", env_int("USE_VISION_RERANK", 1) == 1)
+        ),
+        "vision_rerank_top_k": int(
+            policy.get("vision_rerank_top_k", env_int("VISION_RERANK_TOP_K", 3))
+        ),
+        "vision_weight": float(
+            policy.get("vision_weight", env_float("VISION_WEIGHT", 0.55))
+        ),
+        "metadata_weight": float(
+            policy.get("metadata_weight", env_float("METADATA_WEIGHT", 0.45))
+        ),
+        "min_final_scene_score": float(
+            policy.get("min_final_scene_score", env_float("MIN_FINAL_SCENE_SCORE", 55))
+        ),
+        "min_vision_scene_score": float(
+            policy.get(
+                "min_vision_scene_score", env_float("MIN_VISION_SCENE_SCORE", 45)
+            )
+        ),
+        "min_scene_role_match_score": float(
+            policy.get(
+                "min_scene_role_match_score", env_float("MIN_SCENE_ROLE_MATCH_SCORE", 4)
+            )
+        ),
+        "min_metadata_scene_score": float(
+            policy.get(
+                "min_metadata_scene_score", env_float("MIN_METADATA_SCENE_SCORE", 38)
+            )
+        ),
+        "allow_best_available_below_threshold": bool(
+            policy.get(
+                "allow_best_available_below_threshold",
+                env_int("ALLOW_BEST_AVAILABLE", 0) == 1,
+            )
+        ),
+        "use_scene_retry": bool(
+            policy.get("use_scene_retry", env_int("USE_SCENE_RETRY", 1) == 1)
+        ),
+        "scene_retry_query_rounds": min(
+            int(
+                policy.get(
+                    "scene_retry_query_rounds", env_int("SCENE_RETRY_QUERY_ROUNDS", 1)
+                )
+            ),
             env_int("SCENE_RETRY_QUERY_ROUNDS", 1),
         ),
         "allow_unvisioned_candidates": bool(
-            policy.get("allow_unvisioned_candidates", env_int("ALLOW_UNVISIONED_CANDIDATES", 0) == 1)
+            policy.get(
+                "allow_unvisioned_candidates",
+                env_int("ALLOW_UNVISIONED_CANDIDATES", 0) == 1,
+            )
         ),
-            "allow_relaxed_vision_candidates": bool(
-            policy.get("allow_relaxed_vision_candidates", env_int("ALLOW_RELAXED_VISION_CANDIDATES", 1) == 1)
+        "allow_relaxed_vision_candidates": bool(
+            policy.get(
+                "allow_relaxed_vision_candidates",
+                env_int("ALLOW_RELAXED_VISION_CANDIDATES", 1) == 1,
+            )
         ),
         "relaxed_min_vision_score": float(
-            policy.get("relaxed_min_vision_score", env_float("RELAXED_MIN_VISION_SCORE", 70))
+            policy.get(
+                "relaxed_min_vision_score", env_float("RELAXED_MIN_VISION_SCORE", 70)
+            )
         ),
         "relaxed_min_final_score": float(
-            policy.get("relaxed_min_final_score", env_float("RELAXED_MIN_FINAL_SCORE", 50))
+            policy.get(
+                "relaxed_min_final_score", env_float("RELAXED_MIN_FINAL_SCORE", 50)
+            )
         ),
         "relaxed_min_role_score": float(
             policy.get("relaxed_min_role_score", env_float("RELAXED_MIN_ROLE_SCORE", 4))
         ),
         "allow_scene_drop_fallback": bool(
-            policy.get("allow_scene_drop_fallback", env_int("ALLOW_SCENE_DROP_FALLBACK", 1) == 1)
+            policy.get(
+                "allow_scene_drop_fallback",
+                env_int("ALLOW_SCENE_DROP_FALLBACK", 1) == 1,
+            )
         ),
         "min_scenes_after_drop": int(
             policy.get("min_scenes_after_drop", env_int("MIN_SCENES_AFTER_DROP", 2))
@@ -559,6 +914,7 @@ def get_policy(media_input: dict[str, Any]) -> dict[str, Any]:
             policy.get("max_dropped_scenes", env_int("MAX_DROPPED_SCENES", 1))
         ),
     }
+
 
 def infer_retry_family(scene_request: dict[str, Any]) -> str:
     """
@@ -584,171 +940,500 @@ def infer_retry_family(scene_request: dict[str, Any]) -> str:
     text = normalize_text(" ".join(parts))
     # High-priority concrete action/emotion families.
     # Put these before love/books/teaching so retry does not drift.
-    if any(k in text for k in [
-        "planning", "plan", "writing list", "to do list", "todo list",
-        "checklist", "schedule", "calendar", "typing fast", "write down",
-        "taking notes", "note taking", "ghi chú", "lên kế hoạch",
-        "danh sách", "lịch trình", "kế hoạch",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "planning",
+            "plan",
+            "writing list",
+            "to do list",
+            "todo list",
+            "checklist",
+            "schedule",
+            "calendar",
+            "typing fast",
+            "write down",
+            "taking notes",
+            "note taking",
+            "ghi chú",
+            "lên kế hoạch",
+            "danh sách",
+            "lịch trình",
+            "kế hoạch",
+        ]
+    ):
         return "planning_writing"
 
-    if any(k in text for k in [
-        "sad", "gloomy", "sigh", "sighing", "cry", "crying", "tears",
-        "lonely", "melancholy", "heart broken", "heartbroken", "upset",
-        "feeling down", "buồn", "u sầu", "thở dài", "khóc", "cô đơn",
-        "tan vỡ", "đau lòng",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "sad",
+            "gloomy",
+            "sigh",
+            "sighing",
+            "cry",
+            "crying",
+            "tears",
+            "lonely",
+            "melancholy",
+            "heart broken",
+            "heartbroken",
+            "upset",
+            "feeling down",
+            "buồn",
+            "u sầu",
+            "thở dài",
+            "khóc",
+            "cô đơn",
+            "tan vỡ",
+            "đau lòng",
+        ]
+    ):
         return "sad_gloomy"
-    if any(k in text for k in [
-        "friend", "friends", "friendship", "bond", "connection", "connect",
-        "together", "best friend", "high five", "hug", "companionship",
-        "comfort", "support", "walking together",
-        "bạn", "tình bạn", "đồng hành", "ôm", "an ủi",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "friend",
+            "friends",
+            "friendship",
+            "bond",
+            "connection",
+            "connect",
+            "together",
+            "best friend",
+            "high five",
+            "hug",
+            "companionship",
+            "comfort",
+            "support",
+            "walking together",
+            "bạn",
+            "tình bạn",
+            "đồng hành",
+            "ôm",
+            "an ủi",
+        ]
+    ):
         return "friendship_connection"
 
-    if any(k in text for k in [
-        "chocolate", "sweets", "sweet", "candy", "dessert", "cake",
-        "cookie", "ice cream", "snack", "eating chocolate", "eating sweets",
-        "đồ ngọt", "kẹo", "sô-cô-la", "socola", "bánh", "tráng miệng",
-        "ăn kẹo", "ăn đồ ngọt",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "chocolate",
+            "sweets",
+            "sweet",
+            "candy",
+            "dessert",
+            "cake",
+            "cookie",
+            "ice cream",
+            "snack",
+            "eating chocolate",
+            "eating sweets",
+            "đồ ngọt",
+            "kẹo",
+            "sô-cô-la",
+            "socola",
+            "bánh",
+            "tráng miệng",
+            "ăn kẹo",
+            "ăn đồ ngọt",
+        ]
+    ):
         return "sweets_food"
-    if any(k in text for k in [
-        "happy dance", "happy jump", "joyful", "joy", "celebrate",
-        "celebration", "proud", "excited", "cheer", "cheering",
-        "smiling happily", "vui", "vui vẻ", "nhảy vui", "ăn mừng",
-        "tự hào", "hân hoan",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "happy dance",
+            "happy jump",
+            "joyful",
+            "joy",
+            "celebrate",
+            "celebration",
+            "proud",
+            "excited",
+            "cheer",
+            "cheering",
+            "smiling happily",
+            "vui",
+            "vui vẻ",
+            "nhảy vui",
+            "ăn mừng",
+            "tự hào",
+            "hân hoan",
+        ]
+    ):
         return "joy_celebration"
 
-    if any(k in text for k in [
-        "dizzy", "spinning", "spin", "overwhelmed", "stressed",
-        "chaos", "chaotic", "everything is fine", "fire meme",
-        "panic", "panicking", "quay cuồng", "choáng", "bối rối",
-        "hoảng", "rối tung",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "dizzy",
+            "spinning",
+            "spin",
+            "overwhelmed",
+            "stressed",
+            "chaos",
+            "chaotic",
+            "everything is fine",
+            "fire meme",
+            "panic",
+            "panicking",
+            "quay cuồng",
+            "choáng",
+            "bối rối",
+            "hoảng",
+            "rối tung",
+        ]
+    ):
         return "dizzy_chaos"
 
-    if any(k in text for k in [
-        "silence", "silent", "shh", "regret", "regret speaking",
-        "facepalm", "awkward", "awkward smile", "said too much",
-        "lỡ lời", "im lặng", "hối hận", "ngượng", "quê", "nói lỡ",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "silence",
+            "silent",
+            "shh",
+            "regret",
+            "regret speaking",
+            "facepalm",
+            "awkward",
+            "awkward smile",
+            "said too much",
+            "lỡ lời",
+            "im lặng",
+            "hối hận",
+            "ngượng",
+            "quê",
+            "nói lỡ",
+        ]
+    ):
         return "silence_regret"
 
-    
-    if any(k in text for k in [
-        "relieved", "relief", "deep breath", "breathing", "breathe",
-        "letting go", "let go", "calm down", "lightness", "peaceful smiling",
-        "nhẹ nhõm", "thở ra", "buông bỏ", "bình tâm", "dịu lại",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "relieved",
+            "relief",
+            "deep breath",
+            "breathing",
+            "breathe",
+            "letting go",
+            "let go",
+            "calm down",
+            "lightness",
+            "peaceful smiling",
+            "nhẹ nhõm",
+            "thở ra",
+            "buông bỏ",
+            "bình tâm",
+            "dịu lại",
+        ]
+    ):
         return "relief_breath"
 
-    if any(k in text for k in [
-        "heart/feeling", "heart feeling", "feeling", "feelings",
-        "emotion", "emotional warmth", "warm heart", "heartwarming",
-        "heart beat", "heartbeat", "heart sparkle", "soft heart",
-        "trái tim", "cảm xúc", "ấm lòng", "rung động", "dịu dàng",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "heart/feeling",
+            "heart feeling",
+            "feeling",
+            "feelings",
+            "emotion",
+            "emotional warmth",
+            "warm heart",
+            "heartwarming",
+            "heart beat",
+            "heartbeat",
+            "heart sparkle",
+            "soft heart",
+            "trái tim",
+            "cảm xúc",
+            "ấm lòng",
+            "rung động",
+            "dịu dàng",
+        ]
+    ):
         return "heart_feeling"
-    
+
     # Specific visual content families first. These must outrank generic thinking/reflection.
     love_terms = [
-        "love", "romance", "romantic", "heart eyes", "attachment",
-        "clingy", "mesmerized", "admire", "adore", "obsessed", "crush",
-        "affection", "floating hearts", "say mê", "mê mẩn",
+        "love",
+        "romance",
+        "romantic",
+        "heart eyes",
+        "attachment",
+        "clingy",
+        "mesmerized",
+        "admire",
+        "adore",
+        "obsessed",
+        "crush",
+        "affection",
+        "floating hearts",
+        "say mê",
+        "mê mẩn",
     ]
     if any(k in text for k in love_terms) or re.search(r"\bhearts?\b", text):
         return "love_attachment"
 
-    if any(k in text for k in [
-        "book", "books", "library", "reading", "bookshelf", "book nook",
-        "sách", "đọc sách", "thư viện", "kệ sách",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "book",
+            "books",
+            "library",
+            "reading",
+            "bookshelf",
+            "book nook",
+            "sách",
+            "đọc sách",
+            "thư viện",
+            "kệ sách",
+        ]
+    ):
         return "books_reading"
 
-    
-    if any(k in text for k in [
-            "fail", "failure", "fall", "falling", "trip", "tripping", "clumsy",
-            "mistake", "oops", "slip", "crash", "funny fail", "vấp", "té", "ngã",
-        ]):
-            return "funny_failure"
-    if any(k in text for k in [
-        "worse", "bad luck", "negative escalation", "things going wrong",
-        "problem gets worse", "chain reaction", "pile up", "disaster",
-        "failure", "fail", "clumsy", "tệ hơn", "xui", "rắc rối",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "fail",
+            "failure",
+            "fall",
+            "falling",
+            "trip",
+            "tripping",
+            "clumsy",
+            "mistake",
+            "oops",
+            "slip",
+            "crash",
+            "funny fail",
+            "vấp",
+            "té",
+            "ngã",
+        ]
+    ):
+        return "funny_failure"
+    if any(
+        k in text
+        for k in [
+            "worse",
+            "bad luck",
+            "negative escalation",
+            "things going wrong",
+            "problem gets worse",
+            "chain reaction",
+            "pile up",
+            "disaster",
+            "failure",
+            "fail",
+            "clumsy",
+            "tệ hơn",
+            "xui",
+            "rắc rối",
+        ]
+    ):
         return "negative_escalation"
 
-    if any(k in text for k in [
-        "better", "positive escalation", "breakthrough", "achievement",
-        "success", "impossible becomes possible", "good news gets better",
-        "surprisingly possible", "rocket", "launch", "invention", "eureka",
-        "tốt hơn", "thành công", "bứt phá", "phát minh", "hiện thực",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "better",
+            "positive escalation",
+            "breakthrough",
+            "achievement",
+            "success",
+            "impossible becomes possible",
+            "good news gets better",
+            "surprisingly possible",
+            "rocket",
+            "launch",
+            "invention",
+            "eureka",
+            "tốt hơn",
+            "thành công",
+            "bứt phá",
+            "phát minh",
+            "hiện thực",
+        ]
+    ):
         return "positive_escalation"
 
-    if any(k in text for k in [
-        "freedom", "free", "release", "liberation", "breaking free",
-        "escape", "unlock", "unleash", "constraint to liberation", "tự do",
-        "thoát", "giải phóng",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "freedom",
+            "free",
+            "release",
+            "liberation",
+            "breaking free",
+            "escape",
+            "unlock",
+            "unleash",
+            "constraint to liberation",
+            "tự do",
+            "thoát",
+            "giải phóng",
+        ]
+    ):
         return "freedom_release"
-    if any(k in text for k in [
-            "work", "working", "working hard", "effort", "try", "trying",
-            "determined", "typing", "building", "drawing", "painting",
-            "creating", "making", "bee working", "chăm chỉ", "nỗ lực",
-            "cố gắng", "làm việc", "xây", "vẽ",
-        ]):
-            return "effort_working"
-    if any(k in text for k in [
-        "teach", "teaching", "explain", "explaining", "lesson", "warning",
-        "tell", "telling", "advice", "listen", "guidance", "instruction",
-        "teacher", "scolding", "no", "stop", "dạy", "khuyên", "cảnh báo",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "work",
+            "working",
+            "working hard",
+            "effort",
+            "try",
+            "trying",
+            "determined",
+            "typing",
+            "building",
+            "drawing",
+            "painting",
+            "creating",
+            "making",
+            "bee working",
+            "chăm chỉ",
+            "nỗ lực",
+            "cố gắng",
+            "làm việc",
+            "xây",
+            "vẽ",
+        ]
+    ):
+        return "effort_working"
+    if any(
+        k in text
+        for k in [
+            "teach",
+            "teaching",
+            "explain",
+            "explaining",
+            "lesson",
+            "warning",
+            "tell",
+            "telling",
+            "advice",
+            "listen",
+            "guidance",
+            "instruction",
+            "teacher",
+            "scolding",
+            "no",
+            "stop",
+            "dạy",
+            "khuyên",
+            "cảnh báo",
+        ]
+    ):
         return "teaching_warning"
 
-    if any(k in text for k in [
-        "be yourself", "being yourself", "self acceptance", "self-acceptance",
-        "self expression", "self-expression", "authentic", "authenticity",
-        "different from crowd", "stand out", "uniqueness", "khác biệt",
-        "là chính mình",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "be yourself",
+            "being yourself",
+            "self acceptance",
+            "self-acceptance",
+            "self expression",
+            "self-expression",
+            "authentic",
+            "authenticity",
+            "different from crowd",
+            "stand out",
+            "uniqueness",
+            "khác biệt",
+            "là chính mình",
+        ]
+    ):
         return "self_being_yourself"
 
-    if any(k in text for k in [
-        "kindness", "gentle", "gentleness", "warmth", "kind",
-        "baffled", "what just happened", "tử tế", "ấm áp", "dịu dàng",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "kindness",
+            "gentle",
+            "gentleness",
+            "warmth",
+            "kind",
+            "baffled",
+            "what just happened",
+            "tử tế",
+            "ấm áp",
+            "dịu dàng",
+        ]
+    ):
         return "kindness_vs_confusion"
-    
 
-    
-
-    if any(k in text for k in [
-        "shrug", "peaceful", "relax", "relaxed", "acceptance", "accept",
-        "okay", "calm", "chill", "smile", "lightly", "gentle",
-        "bình yên", "thư giãn", "chấp nhận", "nhún vai",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "shrug",
+            "peaceful",
+            "relax",
+            "relaxed",
+            "acceptance",
+            "accept",
+            "okay",
+            "calm",
+            "chill",
+            "smile",
+            "lightly",
+            "gentle",
+            "bình yên",
+            "thư giãn",
+            "chấp nhận",
+            "nhún vai",
+        ]
+    ):
         return "peaceful_acceptance"
 
-    if any(k in text for k in [
-        "search", "searching", "looking for", "find", "finding",
-        "magnifying", "explore", "curious", "tìm kiếm", "tìm",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "search",
+            "searching",
+            "looking for",
+            "find",
+            "finding",
+            "magnifying",
+            "explore",
+            "curious",
+            "tìm kiếm",
+            "tìm",
+        ]
+    ):
         return "searching"
-    if any(k in text for k in [
-        "think", "thinking", "reflection", "reflect", "realization",
-        "ponder", "pondering", "confused", "confusion", "wonder",
-        "question", "questioning", "deep thought", "suy nghĩ", "ngẫm",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "think",
+            "thinking",
+            "reflection",
+            "reflect",
+            "realization",
+            "ponder",
+            "pondering",
+            "confused",
+            "confusion",
+            "wonder",
+            "question",
+            "questioning",
+            "deep thought",
+            "suy nghĩ",
+            "ngẫm",
+        ]
+    ):
         return "thinking_reflection"
 
     return "general_reflection"
 
 
-def build_semantic_retry_queries(scene_request: dict[str, Any], family: str) -> list[str]:
+def build_semantic_retry_queries(
+    scene_request: dict[str, Any], family: str
+) -> list[str]:
     templates: dict[str, list[str]] = {
         "teaching_warning": [
             "cartoon teacher explaining",
@@ -758,7 +1443,7 @@ def build_semantic_retry_queries(scene_request: dict[str, Any], family: str) -> 
             "cartoon talking and pointing",
             "listener reaction cartoon",
         ],
-                "sweets_food": [
+        "sweets_food": [
             "cute animal eating chocolate",
             "cute animal eating candy",
             "happy cartoon eating sweets",
@@ -766,7 +1451,7 @@ def build_semantic_retry_queries(scene_request: dict[str, Any], family: str) -> 
             "cartoon chocolate happy",
             "cute animal with cake",
         ],
-                "heart_feeling": [
+        "heart_feeling": [
             "cute heart sparkle",
             "heartwarming cute sticker",
             "cartoon heart feeling",
@@ -774,7 +1459,7 @@ def build_semantic_retry_queries(scene_request: dict[str, Any], family: str) -> 
             "warm heart cartoon",
             "cute heart hug",
         ],
-                "funny_failure": [
+        "funny_failure": [
             "cute animal fail",
             "clumsy cartoon fall",
             "funny penguin trip",
@@ -782,7 +1467,7 @@ def build_semantic_retry_queries(scene_request: dict[str, Any], family: str) -> 
             "cute character oops",
             "funny cartoon mistake",
         ],
-                "planning_writing": [
+        "planning_writing": [
             "cartoon writing list",
             "funny cartoon planning",
             "cute animal typing fast",
@@ -949,7 +1634,9 @@ def build_semantic_retry_queries(scene_request: dict[str, Any], family: str) -> 
     return result
 
 
-def extend_scene_queries_with_semantic_retry(scene_request: dict[str, Any]) -> dict[str, Any]:
+def extend_scene_queries_with_semantic_retry(
+    scene_request: dict[str, Any],
+) -> dict[str, Any]:
     family = infer_retry_family(scene_request)
     extended_queries = build_semantic_retry_queries(scene_request, family)
 
@@ -970,6 +1657,8 @@ def extend_scene_queries_with_semantic_retry(scene_request: dict[str, Any]) -> d
         updated["queries_fallback"] = extended_queries[:4]
 
     return updated
+
+
 def normalize_scene_request(scene: dict[str, Any], index: int) -> dict[str, Any]:
     queries_giphy = [
         normalize_text(str(q))
@@ -1005,18 +1694,36 @@ def normalize_scene_request(scene: dict[str, Any], index: int) -> dict[str, Any]
         "semantic_goal": scene.get("semantic_goal") or scene.get("meaning", ""),
         "visual_intent": scene.get("visual_intent") or scene.get("visual_goal", ""),
         "priority": scene.get("priority", "symbolic"),
-        "must_have_elements": [str(x).lower() for x in safe_list(scene.get("must_have_elements")) if str(x).strip()],
-        "must_show": [
+        "must_have_elements": [
             str(x).lower()
-            for x in safe_list(scene.get("must_show") or scene.get("must_have_elements"))
+            for x in safe_list(scene.get("must_have_elements"))
             if str(x).strip()
         ],
-        "nice_to_have": [str(x).lower() for x in safe_list(scene.get("nice_to_have")) if str(x).strip()],
-        "avoid_elements": [str(x).lower() for x in safe_list(scene.get("avoid_elements") or scene.get("avoid")) if str(x).strip()],
+        "must_show": [
+            str(x).lower()
+            for x in safe_list(
+                scene.get("must_show") or scene.get("must_have_elements")
+            )
+            if str(x).strip()
+        ],
+        "nice_to_have": [
+            str(x).lower()
+            for x in safe_list(scene.get("nice_to_have"))
+            if str(x).strip()
+        ],
+        "avoid_elements": [
+            str(x).lower()
+            for x in safe_list(scene.get("avoid_elements") or scene.get("avoid"))
+            if str(x).strip()
+        ],
         "emotion_target": str(scene.get("emotion_target", "") or "").lower(),
         "queries_giphy": dedupe(queries_giphy)[:8],
         "queries_fallback": dedupe(queries_fallback)[:6],
-        "continuity_tags": [str(x).lower() for x in safe_list(scene.get("continuity_tags")) if str(x).strip()],
+        "continuity_tags": [
+            str(x).lower()
+            for x in safe_list(scene.get("continuity_tags"))
+            if str(x).strip()
+        ],
     }
 
 
@@ -1037,7 +1744,9 @@ def collect_candidates_for_scene(
         queries = scene_request.get("queries_giphy", [])
         search_fn = search_giphy
     elif source == "pexels":
-        queries = scene_request.get("queries_fallback", []) or scene_request.get("queries_giphy", [])
+        queries = scene_request.get("queries_fallback", []) or scene_request.get(
+            "queries_giphy", []
+        )
         search_fn = search_pexels_videos
     else:
         return []
@@ -1133,7 +1842,6 @@ def clamp(value: float, low: float, high: float) -> float:
     return max(low, min(high, value))
 
 
-
 def infer_scene_role_intent(scene_request: dict[str, Any]) -> str:
     parts = [
         str(scene_request.get("scene_role", "")),
@@ -1149,58 +1857,185 @@ def infer_scene_role_intent(scene_request: dict[str, Any]) -> str:
     ]
     text = normalize_text(" ".join(parts))
 
-    if any(k in text for k in [
-        "worse", "worse than expected", "bad luck", "things going wrong",
-        "everything going wrong", "problem gets worse", "small problem",
-        "bigger problem", "chain reaction", "pile up", "disaster", "fail chain",
-        "negative escalation", "gets worse", "going wrong", "tệ hơn", "tệ nhất",
-        "xấu hơn", "mọi chuyện tệ", "rắc rối", "xui xẻo",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "worse",
+            "worse than expected",
+            "bad luck",
+            "things going wrong",
+            "everything going wrong",
+            "problem gets worse",
+            "small problem",
+            "bigger problem",
+            "chain reaction",
+            "pile up",
+            "disaster",
+            "fail chain",
+            "negative escalation",
+            "gets worse",
+            "going wrong",
+            "tệ hơn",
+            "tệ nhất",
+            "xấu hơn",
+            "mọi chuyện tệ",
+            "rắc rối",
+            "xui xẻo",
+        ]
+    ):
         return "negative_escalation"
 
-    if any(k in text for k in [
-        "better", "better than expected", "things get even better",
-        "good news", "breakthrough", "impossible becomes possible",
-        "rocket", "rocket launch", "invention", "achievement", "success",
-        "positive escalation", "surprisingly possible", "becomes possible",
-        "tốt hơn", "tuyệt vời hơn", "có thể", "hiện thực", "bứt phá",
-        "thành công", "phát minh", "tên lửa",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "better",
+            "better than expected",
+            "things get even better",
+            "good news",
+            "breakthrough",
+            "impossible becomes possible",
+            "rocket",
+            "rocket launch",
+            "invention",
+            "achievement",
+            "success",
+            "positive escalation",
+            "surprisingly possible",
+            "becomes possible",
+            "tốt hơn",
+            "tuyệt vời hơn",
+            "có thể",
+            "hiện thực",
+            "bứt phá",
+            "thành công",
+            "phát minh",
+            "tên lửa",
+        ]
+    ):
         return "positive_escalation"
 
-    if any(k in text for k in [
-        "do not", "don't", "dont", "cannot", "can't", "cant", "never",
-        "mustn't", "mustnt", "forbidden", "warning", "warn", "saying no",
-        "say no", "says no", "reject", "rejection", "limit", "limitation",
-        "restriction", "teacher", "pointing", "scolding", "không thể",
-        "đừng", "không được", "không nên", "không bao giờ", "cấm",
-        "phủ định", "ngăn cản",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "do not",
+            "don't",
+            "dont",
+            "cannot",
+            "can't",
+            "cant",
+            "never",
+            "mustn't",
+            "mustnt",
+            "forbidden",
+            "warning",
+            "warn",
+            "saying no",
+            "say no",
+            "says no",
+            "reject",
+            "rejection",
+            "limit",
+            "limitation",
+            "restriction",
+            "teacher",
+            "pointing",
+            "scolding",
+            "không thể",
+            "đừng",
+            "không được",
+            "không nên",
+            "không bao giờ",
+            "cấm",
+            "phủ định",
+            "ngăn cản",
+        ]
+    ):
         return "external_negation"
 
-    if any(k in text for k in [
-        "listen", "listening", "hear", "hearing", "think", "thinking",
-        "reflect", "reflection", "processing", "consider", "wonder",
-        "wondering", "confused", "idea", "mind", "brain", "lắng nghe",
-        "suy nghĩ", "ngẫm", "cân nhắc", "bối rối",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "listen",
+            "listening",
+            "hear",
+            "hearing",
+            "think",
+            "thinking",
+            "reflect",
+            "reflection",
+            "processing",
+            "consider",
+            "wonder",
+            "wondering",
+            "confused",
+            "idea",
+            "mind",
+            "brain",
+            "lắng nghe",
+            "suy nghĩ",
+            "ngẫm",
+            "cân nhắc",
+            "bối rối",
+        ]
+    ):
         return "reflection"
 
-    if any(k in text for k in [
-        "possible", "possibility", "happen", "anything", "everything",
-        "real", "reality", "dream", "come true", "breakthrough",
-        "rocket", "launch", "flying", "fly", "invention", "success",
-        "achievement", "victory", "freedom", "free", "có thể",
-        "xảy ra", "hiện thực", "thành hiện thực", "bứt phá",
-        "tên lửa", "bay", "phát minh",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "possible",
+            "possibility",
+            "happen",
+            "anything",
+            "everything",
+            "real",
+            "reality",
+            "dream",
+            "come true",
+            "breakthrough",
+            "rocket",
+            "launch",
+            "flying",
+            "fly",
+            "invention",
+            "success",
+            "achievement",
+            "victory",
+            "freedom",
+            "free",
+            "có thể",
+            "xảy ra",
+            "hiện thực",
+            "thành hiện thực",
+            "bứt phá",
+            "tên lửa",
+            "bay",
+            "phát minh",
+        ]
+    ):
         return "breakthrough"
 
-    if any(k in text for k in [
-        "friend", "friends", "friendship", "together", "beside", "side by side",
-        "hug", "comfort", "support", "help", "bạn", "tình bạn", "bên cạnh",
-        "đồng hành", "ôm", "giúp",
-    ]):
+    if any(
+        k in text
+        for k in [
+            "friend",
+            "friends",
+            "friendship",
+            "together",
+            "beside",
+            "side by side",
+            "hug",
+            "comfort",
+            "support",
+            "help",
+            "bạn",
+            "tình bạn",
+            "bên cạnh",
+            "đồng hành",
+            "ôm",
+            "giúp",
+        ]
+    ):
         return "connection"
 
     role = str(scene_request.get("scene_role", "reflection")).lower().strip()
@@ -1230,6 +2065,7 @@ def role_intent_score_from_tokens(
 
     score -= min(20.0, len(avoid_hits) * 8.0)
     return clamp(score, 0.0, 20.0), wanted_hits, avoid_hits
+
 
 def score_candidate_for_scene(
     candidate: dict[str, Any],
@@ -1355,7 +2191,9 @@ def score_candidate_for_scene(
         cleanliness -= 4
     cleanliness = clamp(cleanliness, 0, 15)
 
-    ds = dimension_score(normalized.get("width"), normalized.get("height"), source=normalized["source"])
+    ds = dimension_score(
+        normalized.get("width"), normalized.get("height"), source=normalized["source"]
+    )
     readability = clamp(5 + ds, 0, 10)
 
     duration = safe_float(normalized.get("duration_sec"))
@@ -1383,7 +2221,16 @@ def score_candidate_for_scene(
         penalty += min(18.0, len(role_avoid_hits) * 8.0)
 
     # Penalize generic mood-only matches for roles that need a clear logic beat.
-    if role_intent in {"external_negation", "negative_escalation", "positive_escalation", "breakthrough"} and role_fit < 4:
+    if (
+        role_intent
+        in {
+            "external_negation",
+            "negative_escalation",
+            "positive_escalation",
+            "breakthrough",
+        }
+        and role_fit < 4
+    ):
         penalty += 12.0
 
     query_round = safe_int(normalized.get("query_round")) or 1
@@ -1401,7 +2248,16 @@ def score_candidate_for_scene(
     ) == 0:
         penalty += 8.0
 
-    total = semantic_fit + role_fit + mood_fit + cleanliness + readability + loop_quality + source_bonus - penalty
+    total = (
+        semantic_fit
+        + role_fit
+        + mood_fit
+        + cleanliness
+        + readability
+        + loop_quality
+        + source_bonus
+        - penalty
+    )
     total = clamp(total, 0, 100)
 
     breakdown = {
@@ -1432,18 +2288,35 @@ def score_candidate_for_scene(
     if query_overlap:
         why_it_fits.append(f"metadata matches query tokens ({query_overlap})")
     if query_scene_alignment:
-        why_it_fits.append(f"search query aligns with scene intent ({query_scene_alignment})")
+        why_it_fits.append(
+            f"search query aligns with scene intent ({query_scene_alignment})"
+        )
     if query_must_alignment:
-        why_it_fits.append(f"search query aligns with must-have elements ({query_must_alignment})")
+        why_it_fits.append(
+            f"search query aligns with must-have elements ({query_must_alignment})"
+        )
     if role_wanted_hits:
-        why_it_fits.append(f"role {role_intent} evidence: {','.join(role_wanted_hits[:5])}")
+        why_it_fits.append(
+            f"role {role_intent} evidence: {','.join(role_wanted_hits[:5])}"
+        )
 
     why_it_might_fail = []
     if avoid_hits:
         why_it_might_fail.append(f"hits avoid elements ({avoid_hits})")
     if role_avoid_hits:
-        why_it_might_fail.append(f"role {role_intent} conflict: {','.join(role_avoid_hits[:5])}")
-    if role_intent in {"external_negation", "negative_escalation", "positive_escalation", "breakthrough"} and role_fit < 4:
+        why_it_might_fail.append(
+            f"role {role_intent} conflict: {','.join(role_avoid_hits[:5])}"
+        )
+    if (
+        role_intent
+        in {
+            "external_negation",
+            "negative_escalation",
+            "positive_escalation",
+            "breakthrough",
+        }
+        and role_fit < 4
+    ):
         why_it_might_fail.append(f"weak narrative role fit for {role_intent}")
     if semantic_fit < 16:
         why_it_might_fail.append("semantic fit still weak")
@@ -1455,9 +2328,13 @@ def score_candidate_for_scene(
     return {
         "score_breakdown": breakdown,
         "judge_summary": {
-            "why_it_fits": "; ".join(why_it_fits) or "partial query/metadata evidence of semantic fit",
-            "why_it_might_fail": "; ".join(why_it_might_fail) or "no strong metadata risk found",
-            "decision": "accept" if total >= 65 else ("shortlist" if total >= 38 else "reject"),
+            "why_it_fits": "; ".join(why_it_fits)
+            or "partial query/metadata evidence of semantic fit",
+            "why_it_might_fail": "; ".join(why_it_might_fail)
+            or "no strong metadata risk found",
+            "decision": (
+                "accept" if total >= 65 else ("shortlist" if total >= 38 else "reject")
+            ),
         },
     }
 
@@ -1630,37 +2507,87 @@ def analyze_candidate_with_vision(
         candidate=previewed,
     )
 
-    model_name = (
-        os.getenv("GOOGLE_VISION_MODEL_NAME", "").strip()
-        or os.getenv("GOOGLE_MODEL_NAME", "").strip()
-        or "gemma-4-31b-it"
-    )
+    client = genai.Client(api_key=api_key)
+    model_candidates = get_vision_model_candidates()
 
-    try:
-        client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(
-            model=model_name,
-            contents=[
-                prompt,
-                types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"),
-            ],
+    if not model_candidates:
+        print("[VISION WARN] no vision model configured")
+        return None
+
+    last_error: Exception | None = None
+
+    for model_name in model_candidates:
+        if model_name in VISION_DISABLED_MODELS:
+            continue
+
+        print(f"[VISION MODEL] {model_name} candidate={candidate.get('media_key')}")
+
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=[
+                    prompt,
+                    types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"),
+                ],
+            )
+            raw_text = response.text or ""
+
+        except Exception as e:
+            last_error = e
+
+            if is_quota_error(e):
+                VISION_DISABLED_MODELS.add(model_name)
+                print(
+                    f"[VISION QUOTA STOP] model={model_name} "
+                    f"candidate={candidate.get('media_key')}: {e}"
+                )
+                continue
+
+            if is_model_unstable_error(e):
+                if should_disable_unstable_model(model_name, e):
+                    VISION_DISABLED_MODELS.add(model_name)
+                    print(
+                        f"[VISION MODEL DISABLED] model={model_name} "
+                        f"errors={VISION_MODEL_ERROR_COUNTS.get(model_name, 0)} "
+                        f"candidate={candidate.get('media_key')}: {e}"
+                    )
+                else:
+                    print(
+                        f"[VISION MODEL WARN] model={model_name} "
+                        f"errors={VISION_MODEL_ERROR_COUNTS.get(model_name, 0)} "
+                        f"candidate={candidate.get('media_key')}: {e}"
+                    )
+                continue
+
+            print(
+                f"[VISION WARN] model failed for {candidate.get('media_key')} "
+                f"model={model_name}: {e}"
+            )
+            continue
+
+        data = extract_json_object_safe(raw_text)
+        if not data:
+            print(
+                f"[VISION WARN] invalid vision JSON for {candidate.get('media_key')} "
+                f"model={model_name}: {raw_text[:160]}"
+            )
+            continue
+
+        data["_model_name"] = model_name
+        data["_preview_sheet"] = preview_sheet
+        data["_raw_text"] = raw_text[:800]
+        VISION_MODEL_ERROR_COUNTS[model_name] = 0
+        return data
+
+    if last_error:
+        print(
+            f"[VISION WARN] all vision models failed for "
+            f"{candidate.get('media_key')}: {last_error}"
         )
-        raw_text = response.text or ""
-    except Exception as e:
-        print(f"[VISION WARN] model failed for {candidate.get('media_key')}: {e}")
-        return None
+    else:
+        print(f"[VISION WARN] all vision models disabled for {candidate.get('media_key')}")
 
-    data = extract_json_object_safe(raw_text)
-    if not data:
-        print(f"[VISION WARN] invalid vision JSON for {candidate.get('media_key')}: {raw_text[:160]}")
-        return None
-
-    data["_model_name"] = model_name
-    data["_preview_sheet"] = preview_sheet
-    data["_raw_text"] = raw_text[:800]
-    return data
-
-
+    return None
 def rerank_scene_shortlist_with_vision(
     *,
     scene_request: dict[str, Any],
@@ -1718,12 +2645,16 @@ def rerank_scene_shortlist_with_vision(
         candidate["final_score"] = float(candidate["score_breakdown"]["total_score"])
         reranked.append(candidate)
 
-    reranked.sort(key=lambda x: x.get("final_score", x["score_breakdown"]["total_score"]), reverse=True)
+    reranked.sort(
+        key=lambda x: x.get("final_score", x["score_breakdown"]["total_score"]),
+        reverse=True,
+    )
     return reranked
 
 
-
-def candidate_is_eligible(item: dict[str, Any], policy: dict[str, Any]) -> tuple[bool, str]:
+def candidate_is_eligible(
+    item: dict[str, Any], policy: dict[str, Any]
+) -> tuple[bool, str]:
     """
     Hard gate for final render eligibility.
 
@@ -1853,7 +2784,6 @@ def apply_hard_gate_to_shortlist(
     return [], rejected
 
 
-
 def dedupe_keep_order(items: list[str]) -> list[str]:
     seen: set[str] = set()
     out: list[str] = []
@@ -1923,7 +2853,19 @@ def build_scene_retry_queries(scene_request: dict[str, Any]) -> list[str]:
             "cute animal love sticker",
         ]
 
-    if family == "negative_escalation" or any(k in text for k in ["pile", "piling", "clutter", "objects", "stuff", "messy", "đống", "bừa bộn"]):
+    if family == "negative_escalation" or any(
+        k in text
+        for k in [
+            "pile",
+            "piling",
+            "clutter",
+            "objects",
+            "stuff",
+            "messy",
+            "đống",
+            "bừa bộn",
+        ]
+    ):
         boosters += [
             "pile of stuff cartoon",
             "messy room cartoon",
@@ -1940,7 +2882,18 @@ def build_scene_retry_queries(scene_request: dict[str, Any]) -> list[str]:
             "cat walking garden",
         ]
 
-    if family == "friendship_connection" or any(k in text for k in ["comfort", "companionship", "hug", "support", "an ủi", "ôm", "đồng hành"]):
+    if family == "friendship_connection" or any(
+        k in text
+        for k in [
+            "comfort",
+            "companionship",
+            "hug",
+            "support",
+            "an ủi",
+            "ôm",
+            "đồng hành",
+        ]
+    ):
         boosters += [
             "comforting hug cartoon",
             "cute friends hug",
@@ -2058,7 +3011,9 @@ def build_scene_shortlist(
     # Strict default:
     # Do not use best-available media unless explicitly enabled. A bad/mismatched
     # GIF is worse than failing this quote and letting main.py try another quote.
-    if not shortlist and bool(policy.get("allow_best_available_below_threshold", False)):
+    if not shortlist and bool(
+        policy.get("allow_best_available_below_threshold", False)
+    ):
         scored_fallback = []
 
         for raw in candidates:
@@ -2080,7 +3035,9 @@ def build_scene_shortlist(
             }
             scored_fallback.append(item)
 
-        scored_fallback.sort(key=lambda x: x["score_breakdown"]["total_score"], reverse=True)
+        scored_fallback.sort(
+            key=lambda x: x["score_breakdown"]["total_score"], reverse=True
+        )
 
         if scored_fallback:
             print(
@@ -2114,7 +3071,9 @@ def build_scene_shortlist(
     return shortlist[: int(policy["shortlist_size_per_scene"])], rejected
 
 
-def pair_consistency_score(bundle: list[dict[str, Any]], video_context: dict[str, Any]) -> float:
+def pair_consistency_score(
+    bundle: list[dict[str, Any]], video_context: dict[str, Any]
+) -> float:
     """
     Lightweight bundle consistency score.
 
@@ -2128,11 +3087,13 @@ def pair_consistency_score(bundle: list[dict[str, Any]], video_context: dict[str
     source_set = {item["selected_media"]["source"] for item in bundle}
     query_tokens_list = [
         tokenize(
-            " ".join([
-                str(item["selected_media"].get("search_query_used", "")),
-                str(item["selected_media"].get("title", "")),
-                str(item.get("judge_summary", {}).get("why_it_fits", "")),
-            ])
+            " ".join(
+                [
+                    str(item["selected_media"].get("search_query_used", "")),
+                    str(item["selected_media"].get("title", "")),
+                    str(item.get("judge_summary", {}).get("why_it_fits", "")),
+                ]
+            )
         )
         for item in bundle
     ]
@@ -2210,7 +3171,9 @@ def select_best_scene_bundle(
                     "judge_summary": item["judge_summary"],
                     "vision_analysis": item.get("vision_analysis"),
                     "vision_score": item.get("vision_score"),
-                    "final_score": item.get("final_score", item["score_breakdown"]["total_score"]),
+                    "final_score": item.get(
+                        "final_score", item["score_breakdown"]["total_score"]
+                    ),
                 }
             )
 
@@ -2227,6 +3190,7 @@ def select_best_scene_bundle(
             best_bundle = bundle_items
 
     return best_bundle, round(best_score, 2)
+
 
 def _extract_json_object(text: str) -> dict[str, Any]:
     text = (text or "").strip()
@@ -2339,6 +3303,7 @@ QUY ƯỚC:
 - Chỉ trả JSON
 """.strip()
 
+
 def validate_selected_arc(
     video_context: dict[str, Any],
     scene_requests: list[dict[str, Any]],
@@ -2350,7 +3315,12 @@ def validate_selected_arc(
     if not api_key:
         raise RuntimeError("Arc validator: thiếu GOOGLE_API_KEY")
 
-    model_name = os.getenv("GOOGLE_MODEL_NAME", "gemma-4-31b-it").strip() or "gemma-4-31b-it"
+    model_name = (
+        os.getenv("GOOGLE_ARC_MODEL_NAME")
+        or os.getenv("GOOGLE_VISION_MODEL_NAME")
+        or os.getenv("GOOGLE_MODEL_NAME")
+        or "gemma-4-31b-it"
+    ).strip()
     max_attempts = env_int("ARC_VALIDATION_RETRIES", 3)
     retry_sleep_sec = env_float("ARC_VALIDATION_RETRY_SLEEP_SEC", 2.0)
 
@@ -2375,7 +3345,9 @@ def validate_selected_arc(
 
             return {
                 "arc_fit_score": int(data.get("arc_fit_score", 0) or 0),
-                "arc_decision": str(data.get("arc_decision", "fail") or "fail").strip().lower(),
+                "arc_decision": str(data.get("arc_decision", "fail") or "fail")
+                .strip()
+                .lower(),
                 "story_summary": str(data.get("story_summary", "") or "").strip(),
                 "missing_beats": data.get("missing_beats", []) or [],
                 "generic_mood_only": bool(data.get("generic_mood_only", False)),
@@ -2392,7 +3364,10 @@ def validate_selected_arc(
             if attempt < max_attempts:
                 time.sleep(retry_sleep_sec)
 
-    raise RuntimeError(f"Arc validator failed after {max_attempts} attempts: {last_error}")
+    raise RuntimeError(
+        f"Arc validator failed after {max_attempts} attempts: {last_error}"
+    )
+
 
 def select_media_bundle(media_selector_input: dict[str, Any]) -> dict[str, Any]:
     """
@@ -2415,7 +3390,9 @@ def select_media_bundle(media_selector_input: dict[str, Any]) -> dict[str, Any]:
 
     scene_requests = [
         normalize_scene_request(scene, i)
-        for i, scene in enumerate(raw_scene_requests[: int(policy["max_scenes"])], start=1)
+        for i, scene in enumerate(
+            raw_scene_requests[: int(policy["max_scenes"])], start=1
+        )
         if isinstance(scene, dict)
     ]
 
@@ -2440,7 +3417,9 @@ def select_media_bundle(media_selector_input: dict[str, Any]) -> dict[str, Any]:
         # Only fallback after GIPHY rounds fail to build a shortlist.
         if not shortlist:
             used_fallback_source = True
-            pexels_candidates = collect_candidates_for_scene(scene, policy, source="pexels")
+            pexels_candidates = collect_candidates_for_scene(
+                scene, policy, source="pexels"
+            )
             shortlist, rejected = build_scene_shortlist(
                 scene,
                 pexels_candidates,
@@ -2489,13 +3468,12 @@ def select_media_bundle(media_selector_input: dict[str, Any]) -> dict[str, Any]:
 
         # We cannot mark final used_media_keys until bundle is selected, but this
         # helps prevent repeated candidates when only one candidate exists.
-        
 
         failed_scene_ids = [
-        scene_requests[i].get("scene_id", i + 1)
-        for i, shortlist in enumerate(scene_shortlists)
-        if not shortlist
-    ]
+            scene_requests[i].get("scene_id", i + 1)
+            for i, shortlist in enumerate(scene_shortlists)
+            if not shortlist
+        ]
 
     dropped_scene_ids: list[Any] = []
     used_scene_drop_fallback = False
@@ -2545,7 +3523,9 @@ def select_media_bundle(media_selector_input: dict[str, Any]) -> dict[str, Any]:
                 "rejected_candidates_log": rejected_candidates_log,
             }
 
-    selected_bundle, bundle_score = select_best_scene_bundle(scene_shortlists, video_context)
+    selected_bundle, bundle_score = select_best_scene_bundle(
+        scene_shortlists, video_context
+    )
 
     if not selected_bundle:
         return {
@@ -2595,7 +3575,9 @@ def select_media_bundle(media_selector_input: dict[str, Any]) -> dict[str, Any]:
         }
 
     arc_score = int(arc_validation.get("arc_fit_score", 0) or 0)
-    arc_decision = str(arc_validation.get("arc_decision", "fail") or "fail").strip().lower()
+    arc_decision = (
+        str(arc_validation.get("arc_decision", "fail") or "fail").strip().lower()
+    )
     generic_mood_only = bool(arc_validation.get("generic_mood_only", False))
 
     if arc_decision == "fail" or arc_score < 60 or generic_mood_only:
@@ -2637,7 +3619,9 @@ def select_media_bundle(media_selector_input: dict[str, Any]) -> dict[str, Any]:
                     {
                         "candidate_id": candidate["candidate_id"],
                         "source": candidate["source"],
-                        "inferred_scene_role": candidate["score_breakdown"].get("inferred_scene_role"),
+                        "inferred_scene_role": candidate["score_breakdown"].get(
+                            "inferred_scene_role"
+                        ),
                         "role_fit": candidate["score_breakdown"].get("role_fit"),
                         "total_score": candidate["score_breakdown"]["total_score"],
                         "final_score": candidate.get("final_score"),
@@ -2693,9 +3677,11 @@ if __name__ == "__main__":
     results = []
     for query in sample_queries:
         picked = select_media_for_scene(query)
-        results.append({
-            "query": query,
-            "picked": picked,
-        })
+        results.append(
+            {
+                "query": query,
+                "picked": picked,
+            }
+        )
 
     print(json.dumps(results, ensure_ascii=False, indent=2))

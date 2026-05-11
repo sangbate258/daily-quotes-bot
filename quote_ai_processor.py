@@ -6,6 +6,7 @@ import os
 import random
 import re
 import time
+import requests
 from typing import Any
 
 from dotenv import load_dotenv
@@ -1409,7 +1410,88 @@ CHẤT LƯỢNG:
 - vi_short không được ngắn hơn vi_full quá nhiều nếu điều đó làm mất ý gốc.
 - Chỉ trả JSON.
 """.strip()
+def build_compact_prompt(quote_text: str, author: str, source_name: str, source_url: str) -> str:
+    return f"""
+Bạn là biên tập viên cho video quote ngắn 9:16 của kênh "Trích dẫn mỗi ngày".
 
+INPUT:
+- text: {quote_text}
+- author: {author}
+- source_name: {source_name}
+- source_url: {source_url}
+
+YÊU CẦU:
+- Dịch quote sang tiếng Việt sát ý gốc, tự nhiên, không rút gọn quá tay.
+- Tạo caption riêng, không lặp lại quote.
+- Tạo 2 scene visual đơn giản, dễ tìm GIF trên GIPHY.
+- Style visual: pastel, cute, wholesome, cartoon/sticker/meme nhẹ.
+- Query GIPHY phải cụ thể, dễ tìm: cat, dog, cartoon, sticker, hug, reading, thinking, happy, sad, dance, etc.
+- Không dùng cinematic, stock footage, surreal, city, abstract.
+- Chỉ trả JSON hợp lệ. Không markdown. Không giải thích.
+
+TRẢ JSON THEO FORM NÀY:
+{{
+  "schema_version": "quote_plan_v1",
+  "quote_source": {{
+    "text_original": "{quote_text}",
+    "author_raw": "{author}",
+    "author_display": "{author}",
+    "source_name": "{source_name}",
+    "source_url": "{source_url}",
+    "author_confidence": "medium"
+  }},
+  "text_output": {{
+    "vi_full": "bản dịch tiếng Việt sát nghĩa",
+    "vi_short": "bản dùng trên video, gần giống vi_full nếu quote không quá dài",
+    "caption": "một câu caption riêng, mở rộng ý nghĩa quote",
+    "fixed_hashtag": "#trichdanmoingay",
+    "dynamic_hashtag": "#wisdom"
+  }},
+  "classification": {{
+    "lane": "wisdom",
+    "mood": "reflective",
+    "music_mood_tag": "reflective",
+    "literal_possible": true
+  }},
+  "visual_plan": {{
+    "core_meaning": "ý chính của quote",
+    "motif_main": "motif visual chính",
+    "visual_world": "pastel meme quote style",
+    "visual_family": "cartoon_sticker",
+    "narrative_shape": "reflection",
+    "scene_count": 2,
+    "consistency_tags": ["pastel", "cute", "cartoon"]
+  }},
+  "scene_plan": [
+    {{
+      "scene_id": 1,
+      "scene_role": "setup",
+      "meaning": "beat đầu tiên của quote",
+      "visual_goal": "mô tả visual cụ thể",
+      "visual_family": "cartoon_sticker",
+      "priority": "literal_or_symbolic",
+      "must_have_elements": ["cute", "cartoon"],
+      "avoid_elements": ["watermark", "news", "political", "vulgar", "random stock footage"],
+      "queries_giphy": ["cute cartoon thinking", "confused cat sticker"],
+      "queries_fallback": ["cute cartoon thinking"],
+      "continuity_tags": ["pastel", "cute"]
+    }},
+    {{
+      "scene_id": 2,
+      "scene_role": "payoff",
+      "meaning": "beat kết của quote",
+      "visual_goal": "mô tả visual cụ thể",
+      "visual_family": "cartoon_sticker",
+      "priority": "literal_or_symbolic",
+      "must_have_elements": ["cute", "cartoon"],
+      "avoid_elements": ["watermark", "news", "political", "vulgar", "random stock footage"],
+      "queries_giphy": ["cute animal happy", "cartoon happy sticker"],
+      "queries_fallback": ["cute animal happy"],
+      "continuity_tags": ["pastel", "cute"]
+    }}
+  ]
+}}
+""".strip()
 
 def _call_model_once(client: Any, model_name: str, prompt: str, *, use_thinking: bool) -> str:
     if use_thinking:
@@ -1427,8 +1509,94 @@ def _call_model_once(client: Any, model_name: str, prompt: str, *, use_thinking:
 
     response = client.models.generate_content(model=model_name, contents=prompt)
     return response.text or ""
+def _call_openrouter_once(prompt: str) -> tuple[str, str]:
+    api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError("Missing OPENROUTER_API_KEY")
 
+    model_name = (
+        os.getenv("OPENROUTER_QUOTE_FALLBACK_MODEL", "").strip()
+        or "nvidia/nemotron-3-super-120b-a12b:free"
+    )
 
+    use_nemotron_thinking = os.getenv("OPENROUTER_NEMOTRON_THINKING", "1").strip() == "1"
+    low_effort = os.getenv("OPENROUTER_NEMOTRON_LOW_EFFORT", "0").strip() == "1"
+    reasoning_max_tokens = int(os.getenv("OPENROUTER_NEMOTRON_REASONING_MAX_TOKENS", "4096"))
+
+    payload = {
+        "model": model_name,
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "Return only valid JSON in message.content. "
+                    "No markdown. No explanation outside JSON."
+                ),
+            },
+            {
+                "role": "user",
+                "content": prompt,
+            },
+        ],
+        "temperature": float(os.getenv("OPENROUTER_QUOTE_FALLBACK_TEMPERATURE", "1.0")),
+        "top_p": float(os.getenv("OPENROUTER_QUOTE_FALLBACK_TOP_P", "0.95")),
+        "max_tokens": int(os.getenv("OPENROUTER_QUOTE_FALLBACK_MAX_TOKENS", "6000")),
+    }
+
+    if use_nemotron_thinking:
+        payload["reasoning"] = {
+            "enabled": True,
+            "max_tokens": reasoning_max_tokens,
+            "exclude": True,
+        }
+        payload["chat_template_kwargs"] = {
+            "enable_thinking": True,
+            "low_effort": low_effort,
+        }
+
+    response = requests.post(
+        "https://openrouter.ai/api/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://github.com/sangbate258/daily-quotes-bot",
+            "X-Title": "daily-quotes-bot",
+        },
+        json=payload,
+        timeout=int(os.getenv("OPENROUTER_QUOTE_FALLBACK_TIMEOUT_SEC", "120")),
+    )
+
+    # Some OpenRouter providers may reject provider-specific fields.
+    # Retry once without thinking controls instead of killing the fallback.
+    if response.status_code in {400, 422} and use_nemotron_thinking:
+        payload.pop("reasoning", None)
+        payload.pop("chat_template_kwargs", None)
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://github.com/sangbate258/daily-quotes-bot",
+                "X-Title": "daily-quotes-bot",
+            },
+            json=payload,
+            timeout=int(os.getenv("OPENROUTER_QUOTE_FALLBACK_TIMEOUT_SEC", "120")),
+        )
+
+    response.raise_for_status()
+    payload = response.json()
+
+    choices = payload.get("choices") or []
+    if not choices:
+        raise RuntimeError(f"OpenRouter returned no choices: {payload}")
+
+    message = choices[0].get("message") or {}
+    content = (message.get("content") or "").strip()
+    if not content:
+        raise RuntimeError(f"OpenRouter returned empty content: {payload}")
+
+    resolved_model = str(payload.get("model") or model_name)
+    return content, resolved_model
 def _fallback_ai_data_for_dev_only(quote: dict[str, str]) -> dict[str, Any]:
     text = safe_str(quote.get("text"))
     author = normalize_author_display(quote.get("author"))
@@ -1525,10 +1693,23 @@ def process_one_quote(quote: dict[str, str]) -> dict[str, Any]:
     last_error: Exception | None = None
 
     for attempt in range(1, max_attempts + 1):
-        use_thinking = attempt == 1
+        use_compact_prompt = attempt > 1 and os.getenv("USE_COMPACT_AI_RETRY", "1").strip() == "1"
+        attempt_prompt = (
+            build_compact_prompt(
+                quote_text=quote["text"],
+                author=quote["author"],
+                source_name=quote["source_name"],
+                source_url=quote["source_url"],
+            )
+            if use_compact_prompt
+            else prompt
+        )
+        use_thinking = attempt == 1 and not use_compact_prompt
+
+        print(f"[AI PROMPT MODE] {'compact' if use_compact_prompt else 'full'} thinking={int(use_thinking)}")
 
         try:
-            raw_text = _call_model_once(client, model_name, prompt, use_thinking=use_thinking)
+            raw_text = _call_model_once(client, model_name, attempt_prompt, use_thinking=use_thinking)
 
             if not raw_text.strip():
                 raise RuntimeError("Model trả output rỗng")
@@ -1548,12 +1729,41 @@ def process_one_quote(quote: dict[str, str]) -> dict[str, Any]:
                 sleep_s = min(8.0, 1.5 * attempt + random.random())
                 time.sleep(sleep_s)
 
-    if os.getenv("ALLOW_LOCAL_AI_FALLBACK", "0").strip() == "1":
-        print("[AI WARN] Using LOCAL fallback planner. This is for pipeline testing only.")
-        return _fallback_ai_data_for_dev_only(quote)
+        if os.getenv("USE_OPENROUTER_AI_FALLBACK", "1").strip() == "1":
+            try:
+                fallback_prompt = (
+                    build_compact_prompt(
+                        quote_text=quote["text"],
+                        author=quote["author"],
+                        source_name=quote["source_name"],
+                        source_url=quote["source_url"],
+                    )
+                    if "build_compact_prompt" in globals()
+                    else prompt
+                )
 
-    raise RuntimeError(f"AI failed after {max_attempts} attempts. Last error: {last_error}")
+                print("[AI FALLBACK] openrouter starting")
+                raw_text, fallback_model_name = _call_openrouter_once(fallback_prompt)
 
+                data = extract_json_object(raw_text)
+                data = normalize_output(data, original_quote=quote)
+                data["_raw_model_text"] = raw_text
+                data["_model_name"] = fallback_model_name
+                data["_ai_attempt"] = "openrouter_fallback"
+                data["_primary_model_name"] = model_name
+                data["_primary_model_error"] = str(last_error)
+
+                print(f"[AI FALLBACK] openrouter model={fallback_model_name}")
+                return data
+
+            except Exception as fallback_error:
+                print("[AI FALLBACK WARN] openrouter failed:", fallback_error)
+
+        if os.getenv("ALLOW_LOCAL_AI_FALLBACK", "0").strip() == "1":
+            print("[AI WARN] Using LOCAL fallback planner. This is for pipeline testing only.")
+            return _fallback_ai_data_for_dev_only(quote)
+
+        raise RuntimeError(f"AI failed after {max_attempts} attempts. Last error: {last_error}")
 
 if __name__ == "__main__":
     raw_quotes = fetch_all_raw_quotes()
