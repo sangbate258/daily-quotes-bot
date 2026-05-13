@@ -447,6 +447,12 @@ def get_vision_model_candidates() -> list[str]:
             models.append(model_name)
 
     return models
+
+def has_available_vision_model() -> bool:
+    return any(
+        model_name not in VISION_DISABLED_MODELS
+        for model_name in get_vision_model_candidates()
+    )
 def tokenize(text: str) -> set[str]:
     text = (text or "").lower()
     tokens = re.findall(r"[a-zA-Z]+", text)
@@ -2404,6 +2410,7 @@ Return only valid JSON with this schema:
   "action": "what happens visually",
   "emotion": "dominant emotion",
   "humor_style": "none | cute | absurd | sarcastic | deadpan | slapstick | wholesome | other",
+  "visual_style": "cartoon_sticker | anime | cute_animation | realistic_human | realistic_animal | cinematic_stock | abstract_symbol | mixed | unknown",
   "visual_clarity_score": 0,
   "semantic_match_score": 0,
   "scene_role_match_score": 0,
@@ -2425,6 +2432,16 @@ Scoring guide:
 - visual_clarity_score: whether a viewer can instantly understand the GIF.
 - text_safety_score: high if no distracting/contradicting text is visible.
 - loop_quality_guess: estimate from the preview; penalize mostly blank, static, or chaotic previews.
+- visual_style:
+  cartoon_sticker = flat/cartoon/sticker/GIF animation style.
+  anime = anime-like animated style.
+  cute_animation = soft/cute animation, not realistic footage.
+  realistic_human = real people/live action.
+  realistic_animal = real animal footage.
+  cinematic_stock = cinematic or stock-video looking real footage.
+  abstract_symbol = symbolic/poetic object shot, flower/reflection/light/etc.
+  mixed = multiple styles in the same GIF or unclear mixed source.
+  unknown = cannot determine.
 """.strip()
 
 
@@ -2513,7 +2530,8 @@ def analyze_candidate_with_vision(
     if not model_candidates:
         print("[VISION WARN] no vision model configured")
         return None
-
+    if not has_available_vision_model():
+        raise RuntimeError("No available vision model left for this run")
     last_error: Exception | None = None
 
     for model_name in model_candidates:
@@ -2586,7 +2604,8 @@ def analyze_candidate_with_vision(
         )
     else:
         print(f"[VISION WARN] all vision models disabled for {candidate.get('media_key')}")
-
+    if not has_available_vision_model():
+        raise RuntimeError("No available vision model left for this run")
     return None
 def rerank_scene_shortlist_with_vision(
     *,
@@ -2627,9 +2646,11 @@ def rerank_scene_shortlist_with_vision(
                 f"scene={scene_request.get('scene_id')}",
                 f"candidate={candidate.get('media_key')}",
                 f"decision={analysis.get('fit_decision')}",
+                f"style={analysis.get('visual_style')}",
                 f"vision_score={candidate['vision_score']}",
                 f"final_score={candidate['final_score']}",
                 f"reason={analysis.get('fit_reason', '')[:100]}",
+                
             )
         else:
             candidate["vision_analysis"] = None
@@ -3177,6 +3198,10 @@ def select_best_scene_bundle(
                 }
             )
 
+        style_conflict = find_visual_style_conflict(video_context, bundle_items)
+        if style_conflict.get("has_conflict"):
+            continue
+
         consistency = pair_consistency_score(bundle_items, video_context)
         avg_score = sum(
             item.get("final_score", item["score_breakdown"]["total_score"])
@@ -3191,7 +3216,120 @@ def select_best_scene_bundle(
 
     return best_bundle, round(best_score, 2)
 
+def normalize_visual_style(value: Any) -> str:
+    style = (
+    normalize_text(str(value or ""))
+    .replace("/", "_")
+    .replace(" ", "_")
+    .replace("-", "_")
+)
 
+    aliases = {
+        "cartoon": "cartoon_sticker",
+        "sticker": "cartoon_sticker",
+        "cartoon_sticker": "cartoon_sticker",
+        "animation": "cute_animation",
+        "animated": "cute_animation",
+        "cute_animation": "cute_animation",
+        "anime": "anime",
+        "realistic": "realistic_human",
+        "real_person": "realistic_human",
+        "real_people": "realistic_human",
+        "live_action": "realistic_human",
+        "realistic_human": "realistic_human",
+        "real_animal": "realistic_animal",
+        "realistic_animal": "realistic_animal",
+        "stock": "cinematic_stock",
+        "stock_footage": "cinematic_stock",
+        "cinematic": "cinematic_stock",
+        "cinematic_stock": "cinematic_stock",
+        "abstract": "abstract_symbol",
+        "symbolic": "abstract_symbol",
+        "abstract_symbol": "abstract_symbol",
+        "mixed": "mixed",
+        "unknown": "unknown",
+    }
+
+    return aliases.get(style, "unknown")
+
+
+def target_prefers_cartoon_style(video_context: dict[str, Any]) -> bool:
+    parts = [
+        str(video_context.get("visual_world", "")),
+        str(video_context.get("visual_family", "")),
+        " ".join(map(str, safe_list(video_context.get("preferred_visual_traits")))),
+        " ".join(map(str, safe_list(video_context.get("consistency_tags")))),
+    ]
+    text = normalize_text(" ".join(parts))
+
+    return any(
+        key in text
+        for key in [
+            "pastel",
+            "meme",
+            "cartoon",
+            "sticker",
+            "cute",
+            "wholesome",
+        ]
+    )
+
+
+def get_bundle_visual_styles(selected_bundle: list[dict[str, Any]]) -> list[str]:
+    styles: list[str] = []
+
+    for item in selected_bundle:
+        analysis = item.get("vision_analysis")
+        if isinstance(analysis, dict):
+            styles.append(normalize_visual_style(analysis.get("visual_style")))
+        else:
+            styles.append("unknown")
+
+    return styles
+
+
+def find_visual_style_conflict(
+    video_context: dict[str, Any],
+    selected_bundle: list[dict[str, Any]],
+) -> dict[str, Any]:
+    styles = get_bundle_visual_styles(selected_bundle)
+
+    animation_styles = {"cartoon_sticker", "anime", "cute_animation"}
+    incompatible_with_cartoon = {
+        "realistic_human",
+        "cinematic_stock",
+        "abstract_symbol",
+    }
+
+    known_styles = [style for style in styles if style != "unknown"]
+
+    if not known_styles:
+        return {
+            "has_conflict": False,
+            "styles": styles,
+            "reason": "visual_style_unknown",
+        }
+
+    if target_prefers_cartoon_style(video_context):
+        has_animation = any(style in animation_styles for style in known_styles)
+        has_incompatible = any(
+            style in incompatible_with_cartoon for style in known_styles
+        )
+
+        if has_animation and has_incompatible:
+            return {
+                "has_conflict": True,
+                "styles": styles,
+                "reason": (
+                    "mixed_cartoon_with_realistic_or_abstract_style_for_pastel_meme_video"
+                ),
+            }
+
+    return {
+        "has_conflict": False,
+        "styles": styles,
+        "reason": "style_consistent_enough",
+    }
 def _extract_json_object(text: str) -> dict[str, Any]:
     text = (text or "").strip()
 
@@ -3260,11 +3398,16 @@ def build_arc_validation_prompt(
         )
 
     return f"""
-Bạn là bộ kiểm định ARC STORY cho video quote ngắn.
+Bạn là HUMAN-STYLE GIF DIRECTOR cho video quote ngắn.
 
 NHIỆM VỤ:
-Đánh giá xem toàn bộ các scene đã chọn có kể đúng ý của TOÀN QUOTE hay không.
-Không chỉ đánh giá từng scene riêng lẻ. Hãy đánh giá cả ARC tổng thể.
+Đánh giá bundle GIF như một người thật đang chọn GIF cho quote video ngắn.
+Không chỉ kiểm tra logic. Hãy kiểm tra cảm giác xem thật:
+- GIF có làm quote dễ hiểu hơn không?
+- GIF có làm quote thấm hơn không?
+- Scene nào chỉ đúng logic nhưng khô, thừa, hoặc giải thích quá rõ?
+- Với quote đối lập đơn giản A vs B, 2 scene có mạnh hơn 3 scene không?
+- Nếu bỏ quote text đi, người xem còn cảm được 50-70% ý chính không?
 
 THÔNG TIN QUOTE:
 - original_quote_en: {quote_en}
@@ -3283,13 +3426,30 @@ QUY TẮC ĐÁNH GIÁ:
 1. ARC phải bám vào ý toàn quote, không chỉ đúng mood chung chung.
 2. Nếu từng scene riêng lẻ có vẻ hợp nhưng ghép lại không tạo thành diễn tiến đúng ý quote, thì phải fail.
 3. Nếu bundle chỉ tạo cảm giác "cute / funny / sad / happy" chung chung mà không thể hiện logic chính của quote, đánh dấu generic_mood_only = true.
-4. Nếu quote mang cấu trúc chuyển biến / tương phản / escalation / realization / payoff mà bundle không thể hiện được điều đó, phải fail.
-5. Nếu bundle kể được một mini story rõ ràng, đúng logic toàn quote, thì pass.
+4. Nếu quote mang cấu trúc chuyển biến / tương phản / escalation / payoff mà bundle không thể hiện được điều đó, phải fail.
+5. Nếu scene chỉ là biểu tượng giải thích khô như "lightbulb / thinking / rethink / idea" mà không làm quote thấm hơn, hãy đánh dấu scene đó là redundant hoặc hurts.
+6. Không ép 3 scene. Ít nhất 2 scene là đủ.
+7. Với quote có đối lập đơn giản A vs B, ưu tiên 2 scene mạnh: A rồi B.
+8. Chỉ giữ scene thứ 3 nếu nó thêm một beat cảm xúc mới, không phải chỉ là cầu nối logic.
+9. Nếu drop một scene mà bundle còn ít nhất 2 scene và cảm xúc mạnh hơn, hãy đề xuất drop scene đó.
+10. GIF tốt là GIF làm người xem hiểu/cảm quote nhanh hơn, không chỉ match keyword.
 
 TRẢ VỀ JSON ĐÚNG SCHEMA:
 {{
   "arc_fit_score": 0,
   "arc_decision": "pass",
+  "human_style_fit_score": 0,
+  "recommended_scene_count": 2,
+  "recommended_drop_scene_indexes": [],
+  "scene_reviews": [
+    {{
+      "scene_index": 1,
+      "necessity": "essential",
+      "human_style_fit": 0,
+      "keep": true,
+      "reason": ""
+    }}
+  ],
   "story_summary": "",
   "missing_beats": [],
   "generic_mood_only": false,
@@ -3297,10 +3457,14 @@ TRẢ VỀ JSON ĐÚNG SCHEMA:
 }}
 
 QUY ƯỚC:
-- arc_fit_score: 0-100
+- arc_fit_score: 0-100, chấm logic story.
+- human_style_fit_score: 0-100, chấm cảm giác giống người thật chọn GIF cho quote video.
 - arc_decision: pass | weak_pass | fail
-- missing_beats: list ngắn các ý còn thiếu
-- Chỉ trả JSON
+- recommended_scene_count: 2 hoặc 3
+- recommended_drop_scene_indexes: list số thứ tự scene trong BUNDLE ĐÃ CHỌN, dùng index bắt đầu từ 1.
+- necessity: essential | useful | redundant | hurts
+- Nếu không cần drop scene nào, trả [].
+- Chỉ trả JSON.
 """.strip()
 
 
@@ -3348,6 +3512,12 @@ def validate_selected_arc(
                 "arc_decision": str(data.get("arc_decision", "fail") or "fail")
                 .strip()
                 .lower(),
+                "human_style_fit_score": int(
+                    data.get("human_style_fit_score", data.get("arc_fit_score", 0)) or 0
+                ),
+                "recommended_scene_count": int(data.get("recommended_scene_count", 0) or 0),
+                "recommended_drop_scene_indexes": data.get("recommended_drop_scene_indexes", []) or [],
+                "scene_reviews": data.get("scene_reviews", []) or [],
                 "story_summary": str(data.get("story_summary", "") or "").strip(),
                 "missing_beats": data.get("missing_beats", []) or [],
                 "generic_mood_only": bool(data.get("generic_mood_only", False)),
@@ -3360,6 +3530,9 @@ def validate_selected_arc(
         except Exception as e:
             last_error = e
             print(f"[ARC WARN] attempt {attempt}/{max_attempts} failed: {e}")
+
+            if is_quota_error(e):
+                raise RuntimeError(f"Arc validator quota exhausted: {e}") from e
 
             if attempt < max_attempts:
                 time.sleep(retry_sleep_sec)
@@ -3542,6 +3715,32 @@ def select_media_bundle(media_selector_input: dict[str, Any]) -> dict[str, Any]:
             "selected_scenes": [],
             "rejected_candidates_log": rejected_candidates_log,
         }
+    style_conflict = find_visual_style_conflict(video_context, selected_bundle)
+    if style_conflict.get("has_conflict"):
+        print(
+            "[STYLE FAIL]",
+            f"styles={style_conflict.get('styles')}",
+            f"reason={style_conflict.get('reason')}",
+            f"motif={video_context.get('motif_main', '')}",
+        )
+
+        return {
+            "schema_version": "media_selector_output_v1",
+            "video_selection_summary": {
+                "selection_status": "failed",
+                "failure_reason": "visual_style_inconsistent",
+                "visual_style_conflict": style_conflict,
+                "motif_main": video_context.get("motif_main", ""),
+                "visual_world": video_context.get("visual_world", ""),
+                "consistency_score": bundle_score,
+                "used_fallback_source": used_fallback_source,
+                "used_scene_drop_fallback": used_scene_drop_fallback,
+                "dropped_scene_ids": dropped_scene_ids,
+                "notes": "bundle_rejected_before_arc_due_to_visual_style_mix",
+            },
+            "selected_scenes": [],
+            "rejected_candidates_log": rejected_candidates_log,
+        }
     try:
         arc_validation = validate_selected_arc(
             video_context=video_context,
@@ -3573,14 +3772,104 @@ def select_media_bundle(media_selector_input: dict[str, Any]) -> dict[str, Any]:
             "selected_scenes": [],
             "rejected_candidates_log": rejected_candidates_log,
         }
+    recommended_drop_indexes_raw = arc_validation.get("recommended_drop_scene_indexes") or []
+    recommended_drop_indexes: list[int] = []
 
+    for value in recommended_drop_indexes_raw:
+        try:
+            index_value = int(value)
+        except (TypeError, ValueError):
+            continue
+        if 1 <= index_value <= len(selected_bundle):
+            recommended_drop_indexes.append(index_value)
+
+    recommended_drop_indexes = sorted(set(recommended_drop_indexes))
+
+    can_director_drop = (
+        bool(policy.get("allow_scene_drop_fallback", True))
+        and len(recommended_drop_indexes) > 0
+        and len(recommended_drop_indexes) <= int(policy.get("max_dropped_scenes", 1))
+        and len(selected_bundle) - len(recommended_drop_indexes)
+        >= int(policy.get("min_scenes_after_drop", 2))
+    )
+
+    if can_director_drop:
+        drop_index_set = set(recommended_drop_indexes)
+        director_dropped_scene_ids = [
+            scene_requests[index - 1].get("scene_id", index)
+            for index in recommended_drop_indexes
+        ]
+
+        print(
+            "[DIRECTOR SCENE DROP]",
+            f"drop_indexes={recommended_drop_indexes}",
+            f"dropped_scene_ids={director_dropped_scene_ids}",
+            f"reason={str(arc_validation.get('reason', ''))[:160]}",
+        )
+
+        scene_requests = [
+            scene
+            for index, scene in enumerate(scene_requests, start=1)
+            if index not in drop_index_set
+        ]
+        scene_shortlists = [
+            shortlist
+            for index, shortlist in enumerate(scene_shortlists, start=1)
+            if index not in drop_index_set
+        ]
+        selected_bundle = [
+            item
+            for index, item in enumerate(selected_bundle, start=1)
+            if index not in drop_index_set
+        ]
+
+        dropped_scene_ids.extend(director_dropped_scene_ids)
+        used_scene_drop_fallback = True
+
+        try:
+            arc_validation = validate_selected_arc(
+                video_context=video_context,
+                scene_requests=scene_requests,
+                selected_bundle=selected_bundle,
+            )
+
+            print(
+                "[ARC AFTER DIRECTOR DROP]",
+                f"decision={arc_validation.get('arc_decision')}",
+                f"score={arc_validation.get('arc_fit_score')}",
+                f"human_style={arc_validation.get('human_style_fit_score')}",
+                f"generic_mood_only={arc_validation.get('generic_mood_only')}",
+                f"reason={str(arc_validation.get('reason', ''))[:160]}",
+            )
+
+        except Exception as e:
+            return {
+                "schema_version": "media_selector_output_v1",
+                "video_selection_summary": {
+                    "selection_status": "failed",
+                    "failure_reason": "arc_validator_error_after_director_drop",
+                    "arc_error": str(e),
+                    "motif_main": video_context.get("motif_main", ""),
+                    "visual_world": video_context.get("visual_world", ""),
+                    "consistency_score": bundle_score,
+                    "used_fallback_source": used_fallback_source,
+                    "used_scene_drop_fallback": used_scene_drop_fallback,
+                    "dropped_scene_ids": dropped_scene_ids,
+                    "notes": "director_scene_drop_revalidation_failed",
+                },
+                "selected_scenes": [],
+                "rejected_candidates_log": rejected_candidates_log,
+            }
     arc_score = int(arc_validation.get("arc_fit_score", 0) or 0)
+    human_style_score = int(
+        arc_validation.get("human_style_fit_score", arc_score) or arc_score
+    )
     arc_decision = (
         str(arc_validation.get("arc_decision", "fail") or "fail").strip().lower()
     )
     generic_mood_only = bool(arc_validation.get("generic_mood_only", False))
 
-    if arc_decision == "fail" or arc_score < 60 or generic_mood_only:
+    if arc_decision == "fail" or arc_score < 60 or human_style_score < 60 or generic_mood_only:
         return {
             "schema_version": "media_selector_output_v1",
             "video_selection_summary": {

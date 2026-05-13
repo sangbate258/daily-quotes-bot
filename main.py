@@ -903,7 +903,20 @@ async def run_daily(config: AppConfig, videos: int) -> None:
             await generate_one_video(config, slot_index=slot_index, attempt_number=1)
         except Exception as first_error:
             print(f"[ERROR] Video {slot_index} attempt 1 failed:", first_error)
-
+            if "No available vision model left for this run" in str(first_error):
+                error_text = (
+                    f"❌ Video {slot_index} lỗi vì vision model/quota không khả dụng.\n\n"
+                    f"Lỗi: {first_error}\n\n"
+                    f"Không retry vì retry sẽ fail tiếp khi không còn vision model để chấm GIF.\n\n"
+                    f"Trace gần nhất:\n{traceback.format_exc()}"
+                )
+                try:
+                    await send_telegram_error(config, error_text)
+                except Exception as telegram_error:
+                    print(
+                        "[WARN] Could not send Telegram error message:", telegram_error
+                    )
+                continue
             # Retry 1 lần nếu còn trong khung giờ. Khi test bằng --ignore-window, retry luôn.
             try:
                 if inside_run_window(config):

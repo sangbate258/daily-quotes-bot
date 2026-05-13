@@ -1243,32 +1243,148 @@ RULE MOOD & MUSIC:
 - Không gán music_mood_tag quá chung chung nếu quote có cảm xúc rõ.
 
 RULE SCENE PLANNING — CỰC KỲ QUAN TRỌNG:
-- Với quote trừu tượng, đừng chỉ chọn GIF cute chung chung. Hãy biến ý quote thành 2–3 beat nhìn thấy được.
-- Nếu quote có nguyên nhân → kết quả, hãy dùng 3 beat: tension/problem → choice/action → payoff/relief.
-- Nếu quote có đối lập, hãy dùng contrast rõ: trạng thái sai/lệch → trạng thái đúng/tốt.
-- Scene query phải thể hiện được hành động/cảm xúc cụ thể, không chỉ mood chung.
-- Query tốt phải trả lời được câu: "Người xem nhìn GIF này có hiểu thêm ý quote không?"
 
-VÍ DỤ BEAT THEO LOẠI QUOTE:
-- Truth / lie / remember:
-  1) confused monkey trying to remember
-  2) honest cartoon speaking truth / pinocchio nose funny truth
-  3) relieved cartoon character / happy free dance cartoon
-- Life goes on:
-  1) confused cartoon pause
-  2) river flowing cartoon / leaf floating on water cartoon
-  3) peaceful cartoon smiling / cute animal relaxing
-- Be yourself / self-expression:
-  1) awkward trying to fit in
-  2) cute animal dancing / proud cartoon dance
-  3) cute animal shrug / accepted by friends cartoon
-- Friendship / walk beside me:
-  1) two buddies walking side by side
-  2) cute animal friends hug / two cats high five
-- Kindness / treating weaker people:
-  1) small animal needs help
-  2) cartoon helping friend / cute friends hug
+Mục tiêu không phải là tìm GIF cute nhất.
+Mục tiêu là chọn GIF diễn đúng beat ý nghĩa của quote.
 
+Mỗi scene phải là một VISUAL BEAT nhìn thấy được:
+- scene 1 = tình huống / tension / vấn đề
+- scene 2 = lựa chọn / chuyển biến / đối lập
+- scene 3 = payoff / nhẹ nhõm / kết luận cảm xúc
+
+Nguyên tắc ưu tiên:
+1. Đúng hành động / beat chính
+2. Đúng cảm xúc
+3. Đúng arc giữa các scene
+4. Đúng style cute/cartoon/pastel
+5. Đúng con vật/đạo cụ cụ thể
+
+KHÔNG ĐƯỢC khóa scene quá cụ thể nếu không cần thiết.
+Ví dụ không nên bắt buộc:
+- đúng mèo và chó cùng nhìn nhau
+- đúng cây mọc từ trang sách
+- đúng nhân vật đứng trước núi và cúp vàng
+- đúng thought bubble với chi tiết cụ thể
+- đúng một object quá hiếm trên GIPHY
+
+Nếu quote không bắt buộc con vật/đạo cụ đó, hãy để con vật/đạo cụ là nice_to_have, không phải must_have.
+
+must_have_elements / must_show chỉ nên chứa:
+- hành động chính
+- cảm xúc chính
+- beat ý nghĩa bắt buộc
+
+nice_to_have mới chứa:
+- cat, dog, bunny, bear
+- pastel
+- specific object
+- exact setting
+
+Ví dụ:
+Sai:
+must_have = ["cat", "dog", "pastel", "sitting together", "thinking about happiness"]
+
+Đúng:
+must_have = ["two characters", "friendship", "warm connection"]
+nice_to_have = ["cat", "dog", "pastel", "sitting together"]
+
+Với quote trừu tượng, hãy đổi thành hành vi cụ thể dễ tìm trên GIPHY:
+- truth / secret / honesty → shh, keeping mouth closed, suspicious face, refusing to speak
+- growth / change → small step forward, trying hard, watering plant, improving
+- past / yesterday → looking back, calendar, walking away, moving forward
+- friendship / support → hug, walking together, helping friend, sitting together
+- learning / books → reading book, confused about book, happy reading, lightbulb idea
+- effort / success → trying hard, working, tired effort, small celebration
+- fear / doubt → nervous face, hiding, hesitant step, then step forward
+- regret / awkwardness → facepalm, awkward smile, freezing, embarrassed reaction
+- kindness → helping friend, sharing, comforting, gentle hug
+
+Query GIPHY phải là hành động dễ search:
+Tốt:
+- "cartoon friends thinking"
+- "cute friends sitting together"
+- "cartoon character shh"
+- "confused cat thinking"
+- "cute animal facepalm"
+- "small character walking forward"
+- "friends hug cartoon"
+- "cute animal trying hard"
+
+Tệ:
+- "deep wisdom"
+- "happiness meaning"
+- "magic sparkles"
+- "beautiful soul"
+- "truth energy"
+- "cat and dog thinking about each other's happiness in pastel background"
+
+Luật quan trọng:
+- GIF phải giúp người xem hiểu quote hơn, kể cả khi chưa đọc hết chữ.
+- Được dùng GIF có chữ nếu chữ hỗ trợ đúng beat.
+- Chỉ tránh chữ trong GIF nếu nó mâu thuẫn quote, gây nhiễu nghĩa, watermark/logo, hoặc làm người xem hiểu sai.
+- Đừng reject ý tưởng chỉ vì không đúng con vật. Reject nếu sai hành động hoặc sai cảm xúc.
+- Quote sâu → scene đơn giản, rõ hành động.
+- Mood chỉ là phụ; story beat mới là chính.
+RULE CENTRAL IMAGE — RẤT QUAN TRỌNG:
+
+Mỗi quote phải có central_tension và central_symbol.
+
+central_tension = xung đột/chuyển động chính của quote.
+central_symbol = hình ảnh đơn giản giúp người xem nhận ra chủ đề quote.
+
+queries_giphy không được chỉ là mood/action chung.
+Mỗi query tốt nên có:
+[subject đơn giản] + [visible action] + [central symbol nếu có]
+
+Ví dụ:
+- greatness / greatness fear / greatness achieved
+  central_tension: small/afraid → brave/proud
+  central_symbol: stage, crown, trophy, medal, spotlight, big dream
+  query tốt: "small character big dream", "cartoon character scared stage", "cute animal trophy proud", "cartoon crown proud"
+
+- truth / secret / honesty
+  central_tension: muốn nói → giữ lại / chọn im lặng
+  central_symbol: shh, mouth closed, secret, suspicious face
+  query tốt: "cartoon shh secret", "cute animal mouth closed", "suspicious cartoon face"
+
+- growth / change
+  central_tension: nhỏ/yếu → lớn/mạnh hơn
+  central_symbol: plant, steps, ladder, progress, small win
+  query tốt: "watering plant cartoon", "small character step forward", "cute animal trying hard"
+
+- friendship / support
+  central_tension: một mình → có người bên cạnh
+  central_symbol: hug, side by side, helping hand, umbrella
+  query tốt: "friends hug cartoon", "cartoon friends walking together", "cute animal helping friend"
+
+- learning / books
+  central_tension: chưa hiểu → hiểu ra / thích thú
+  central_symbol: book, lightbulb, reading, library
+  query tốt: "cute cat reading book", "cartoon lightbulb idea", "confused character reading book"
+
+Tránh query quá chung nếu thiếu central symbol:
+- "cute animal thinking"
+- "cartoon nervous"
+- "cute animal proud"
+- "cartoon celebrate"
+
+Các query trên chỉ được dùng làm fallback, không phải query chính.
+Không được yêu cầu GIF phải có chữ/label cụ thể như "Truth", "Lie", "Success", "Greatness".
+Text trong GIF được phép nếu tự nhiên và hỗ trợ beat, nhưng không được biến text thành must-have.
+central_symbol phải là vật/hành động dễ thấy, không phải chữ viết bắt buộc.
+
+Ví dụ sai:
+- lightbulb labeled "Truth"
+- pillow saying "Lie"
+- trophy with text "Success"
+
+Ví dụ đúng:
+- cartoon character squinting at bright light
+- cartoon shh secret
+- pinocchio nose funny
+- character hiding mouth
+- cute animal holding trophy
+- cartoon crown proud
 RULE VISUAL THEO CLIP MẪU:
 - Ưu tiên GIPHY kiểu: cartoon, sticker, cute animal, light reaction, simple meme.
 - GIF chỉ minh họa phụ, không phải full-screen background.
@@ -1425,8 +1541,23 @@ YÊU CẦU:
 - Tạo caption riêng, không lặp lại quote.
 - Tạo 2 scene visual đơn giản, dễ tìm GIF trên GIPHY.
 - Style visual: pastel, cute, wholesome, cartoon/sticker/meme nhẹ.
-- Query GIPHY phải cụ thể, dễ tìm: cat, dog, cartoon, sticker, hug, reading, thinking, happy, sad, dance, etc.
-- Không dùng cinematic, stock footage, surreal, city, abstract.
+- Scene phải searchable trên GIPHY.
+- Ưu tiên visible action và emotional beat hơn là đúng chính xác con vật hay đạo cụ.
+- Nếu quote không bắt buộc đúng con vật/đạo cụ, hãy xem chúng là nice_to_have, không phải must-have.
+- Visual_goal phải đơn giản, dễ tìm; không tạo cảnh quá hiếm hoặc quá thơ như cây mọc từ trang sách, linh hồn/ánh sáng trừu tượng, mèo và chó cùng suy tư về hạnh phúc.
+- Query GIPHY phải ngắn, cụ thể, có visible action + central symbol của quote nếu có.
+- Không dùng query chỉ có mood/action chung như "cute animal thinking", "cartoon nervous", "cute animal proud", "cartoon celebrate" làm query chính.
+- Query tốt: "cartoon character scared stage", "cute animal trophy proud", "cartoon shh secret", "watering plant cartoon", "friends hug cartoon", "cute cat reading book".
+- Với mỗi quote, tự xác định central_tension và central_symbol trước khi viết scene.
+- central_symbol nên là vật/hành động dễ tìm trên GIPHY: stage, crown, trophy, medal, spotlight, shh, plant, steps, hug, book, lightbulb.
+- Không được yêu cầu GIF phải có chữ/label cụ thể như "Truth", "Lie", "Success", "Greatness".
+- Text trong GIF được phép nếu tự nhiên và hỗ trợ beat, nhưng không được biến text thành must-have.
+- central_symbol phải là vật/hành động dễ thấy, không phải chữ viết bắt buộc.
+- Ví dụ sai: lightbulb labeled "Truth", pillow saying "Lie", trophy with text "Success".
+- Ví dụ đúng: cartoon shh secret, character hiding mouth, cartoon character squinting at bright light, cute animal holding trophy, cartoon crown proud.
+- Không dùng query quá trừu tượng như: "deep wisdom", "beautiful soul", "truth energy", "happiness meaning".
+- Không dùng cinematic, stock footage, surreal, city, abstract nếu không thật sự cần.
+- GIF có chữ vẫn được nếu chữ hỗ trợ đúng beat; chỉ tránh nếu chữ gây hiểu sai, gây nhiễu, watermark/logo.
 - Chỉ trả JSON hợp lệ. Không markdown. Không giải thích.
 
 TRẢ JSON THEO FORM NÀY:
@@ -1470,10 +1601,11 @@ TRẢ JSON THEO FORM NÀY:
       "visual_goal": "mô tả visual cụ thể",
       "visual_family": "cartoon_sticker",
       "priority": "literal_or_symbolic",
-      "must_have_elements": ["cute", "cartoon"],
-      "avoid_elements": ["watermark", "news", "political", "vulgar", "random stock footage"],
-      "queries_giphy": ["cute cartoon thinking", "confused cat sticker"],
-      "queries_fallback": ["cute cartoon thinking"],
+    "must_have_elements": ["thinking", "confused"],
+    "nice_to_have": ["cat", "dog", "pastel", "cute"],
+    "avoid_elements": ["watermark", "news", "political", "vulgar", "random stock footage"],
+    "queries_giphy": ["cartoon character facing challenge", "small character big dream"],
+    "queries_fallback": ["cute animal thinking"],
       "continuity_tags": ["pastel", "cute"]
     }},
     {{
@@ -1483,10 +1615,11 @@ TRẢ JSON THEO FORM NÀY:
       "visual_goal": "mô tả visual cụ thể",
       "visual_family": "cartoon_sticker",
       "priority": "literal_or_symbolic",
-      "must_have_elements": ["cute", "cartoon"],
-      "avoid_elements": ["watermark", "news", "political", "vulgar", "random stock footage"],
-      "queries_giphy": ["cute animal happy", "cartoon happy sticker"],
-      "queries_fallback": ["cute animal happy"],
+        "must_have_elements": ["warm connection", "relief"],
+        "nice_to_have": ["cat", "dog", "pastel", "hug"],
+        "avoid_elements": ["watermark", "news", "political", "vulgar", "random stock footage"],
+        "queries_giphy": ["cute animal trophy proud", "cartoon crown proud"],
+        "queries_fallback": ["cartoon happy relief"],
       "continuity_tags": ["pastel", "cute"]
     }}
   ]
@@ -1729,41 +1862,37 @@ def process_one_quote(quote: dict[str, str]) -> dict[str, Any]:
                 sleep_s = min(8.0, 1.5 * attempt + random.random())
                 time.sleep(sleep_s)
 
-        if os.getenv("USE_OPENROUTER_AI_FALLBACK", "1").strip() == "1":
-            try:
-                fallback_prompt = (
-                    build_compact_prompt(
-                        quote_text=quote["text"],
-                        author=quote["author"],
-                        source_name=quote["source_name"],
-                        source_url=quote["source_url"],
-                    )
-                    if "build_compact_prompt" in globals()
-                    else prompt
-                )
+    if os.getenv("USE_OPENROUTER_AI_FALLBACK", "1").strip() == "1":
+        try:
+            fallback_prompt = build_compact_prompt(
+                quote_text=quote["text"],
+                author=quote["author"],
+                source_name=quote["source_name"],
+                source_url=quote["source_url"],
+            )
 
-                print("[AI FALLBACK] openrouter starting")
-                raw_text, fallback_model_name = _call_openrouter_once(fallback_prompt)
+            print("[AI FALLBACK] openrouter starting")
+            raw_text, fallback_model_name = _call_openrouter_once(fallback_prompt)
 
-                data = extract_json_object(raw_text)
-                data = normalize_output(data, original_quote=quote)
-                data["_raw_model_text"] = raw_text
-                data["_model_name"] = fallback_model_name
-                data["_ai_attempt"] = "openrouter_fallback"
-                data["_primary_model_name"] = model_name
-                data["_primary_model_error"] = str(last_error)
+            data = extract_json_object(raw_text)
+            data = normalize_output(data, original_quote=quote)
+            data["_raw_model_text"] = raw_text
+            data["_model_name"] = fallback_model_name
+            data["_ai_attempt"] = "openrouter_fallback"
+            data["_primary_model_name"] = model_name
+            data["_primary_model_error"] = str(last_error)
 
-                print(f"[AI FALLBACK] openrouter model={fallback_model_name}")
-                return data
+            print(f"[AI FALLBACK] openrouter model={fallback_model_name}")
+            return data
 
-            except Exception as fallback_error:
-                print("[AI FALLBACK WARN] openrouter failed:", fallback_error)
+        except Exception as fallback_error:
+            print("[AI FALLBACK WARN] openrouter failed:", fallback_error)
 
-        if os.getenv("ALLOW_LOCAL_AI_FALLBACK", "0").strip() == "1":
-            print("[AI WARN] Using LOCAL fallback planner. This is for pipeline testing only.")
-            return _fallback_ai_data_for_dev_only(quote)
+    if os.getenv("ALLOW_LOCAL_AI_FALLBACK", "0").strip() == "1":
+        print("[AI WARN] Using LOCAL fallback planner. This is for pipeline testing only.")
+        return _fallback_ai_data_for_dev_only(quote)
 
-        raise RuntimeError(f"AI failed after {max_attempts} attempts. Last error: {last_error}")
+    raise RuntimeError(f"AI failed after {max_attempts} attempts. Last error: {last_error}")
 
 if __name__ == "__main__":
     raw_quotes = fetch_all_raw_quotes()
